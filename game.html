@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku 2.O - Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="questions.js" defer></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --pink:#FF1493;--pink2:#FF69B4;--pink3:#FFB6D9;--pink4:#FFB7C5;--pink5:#FF9FAA;
+  --bg:#FFF0F5;--card:#fff;--text:#3a2040;--muted:#9a7aaa;
+  --green:#7ec850;--green-dark:#4a8a1a;--sky:#87CEEB;--sky-dark:#3a8ab5;
+  --lemon:#c8e837;--lemon-dark:#8aaa10;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 20%,#FFE4EE 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,#FFD6E8 0%,transparent 50%),
+    radial-gradient(ellipse at 60% 10%,#FFF0F8 0%,transparent 40%);
+  z-index:0;pointer-events:none;
+}
+.app{position:relative;z-index:1;width:95%;max-width:560px;margin:0 auto;padding:10px 0 30px;min-height:100vh;display:flex;flex-direction:column;}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 8px 14px;border-bottom:2px solid #FFD6E8;}
+.logo-txt{font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:900;color:var(--text);letter-spacing:1.5px;}
+.logo-txt span{display:block;font-size:.6rem;color:var(--pink2);font-family:'Nunito',sans-serif;font-weight:700;letter-spacing:2px;}
+.topbar-btns{display:flex;gap:8px;}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:2px solid #FFD6E8;background:#fff;color:var(--pink);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px #FFB6D944;}
+.icon-btn:hover{border-color:var(--pink);box-shadow:0 0 12px #FF149344;transform:translateY(-2px);}
+
+/* PAGES */
+.page{display:none;flex:1;flex-direction:column;align-items:center;}
+.page.active{display:flex;}
+.pg-title{font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:700;color:var(--text);letter-spacing:1px;text-align:center;margin:18px 0 4px;}
+.pg-sub{font-size:.72rem;letter-spacing:3px;color:var(--pink2);text-transform:uppercase;text-align:center;margin-bottom:16px;}
+.neon-div{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--pink),transparent);margin:10px auto 18px;border-radius:2px;}
+
+/* CHAPTERS PAGE */
+#pg-chapters{padding:10px 8px 20px;gap:14px;background:url('Page3a.jpg') center/cover no-repeat;background-attachment:local;border-radius:0;min-height:90vh;}
+#pg-chapters::before{content:'';position:fixed;inset:0;background:rgba(255,240,248,.78);z-index:-1;}
+.chapter-card{
+  width:100%;padding:22px 20px;border-radius:20px;cursor:pointer;
+  display:flex;align-items:center;gap:16px;
+  background:linear-gradient(145deg,#d4f56a,#b8e030);
+  border:2px solid var(--lemon-dark);
+  box-shadow:0 6px 0 var(--lemon-dark),0 8px 18px rgba(0,0,0,.15);
+  transition:transform .14s,box-shadow .14s;
+  position:relative;overflow:hidden;
+}
+.chapter-card::before{content:'';position:absolute;top:0;left:0;right:0;height:40%;background:rgba(255,255,255,.3);border-radius:20px 20px 0 0;pointer-events:none;}
+.chapter-card:active{transform:translateY(4px);box-shadow:0 2px 0 var(--lemon-dark),0 4px 10px rgba(0,0,0,.1);}
+.chapter-card:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--lemon-dark),0 10px 22px rgba(0,0,0,.18);}
+.ch-ico{font-size:2rem;min-width:40px;text-align:center;}
+.ch-info{flex:1;}
+.ch-name{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;color:var(--pink5);text-shadow:1px 1px 0 rgba(255,255,255,.6);}
+.ch-sub{font-size:.75rem;color:#5a8000;font-weight:600;margin-top:2px;}
+.ch-arr{font-size:1.4rem;color:var(--pink4);font-weight:700;}
+
+/* LEVELS PAGE */
+#pg-levels{padding:10px 8px 20px;gap:10px;}
+.levels-list{width:100%;display:flex;flex-direction:column;gap:10px;max-height:64vh;overflow-y:auto;padding:2px 4px;}
+.levels-list::-webkit-scrollbar{width:4px;}
+.levels-list::-webkit-scrollbar-thumb{background:var(--pink2);border-radius:4px;}
+.level-btn{
+  width:100%;padding:16px 20px;border-radius:16px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:'Nunito',sans-serif;font-weight:700;
+  transition:transform .14s,box-shadow .14s;
+  position:relative;overflow:hidden;
+}
+.level-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:rgba(255,255,255,.25);border-radius:16px 16px 0 0;pointer-events:none;}
+.level-btn.unlocked{background:linear-gradient(145deg,#a8e4f8,#6bc8ef);border:2px solid var(--sky-dark);box-shadow:0 5px 0 var(--sky-dark),0 7px 16px rgba(0,0,0,.12);color:#1a4a6a;}
+.level-btn.unlocked:active{transform:translateY(3px);box-shadow:0 2px 0 var(--sky-dark);}
+.level-btn.unlocked:hover{transform:translateY(-2px);box-shadow:0 7px 0 var(--sky-dark),0 9px 20px rgba(0,0,0,.15);}
+.level-btn.locked{background:linear-gradient(145deg,#e8d0ea,#d0b8d4);border:2px solid #b090b8;box-shadow:0 4px 0 #b090b8;color:#7a5a8a;cursor:not-allowed;opacity:.75;}
+.lv-left{display:flex;flex-direction:column;align-items:flex-start;}
+.lv-num{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;}
+.lv-lbl{font-size:.7rem;letter-spacing:1.5px;margin-top:2px;}
+.lv-right{display:flex;align-items:center;gap:8px;}
+.lv-stars{font-size:.9rem;letter-spacing:2px;}
+.lock-ico{font-size:1.3rem;}
+
+/* GAME PAGE */
+#pg-game{padding:8px 4px 16px;gap:8px;align-items:center;}
+.game-hdr{width:100%;display:flex;align-items:center;justify-content:space-between;padding:4px 2px 8px;}
+.timer-wrap{background:#fff;border:2px solid #FFD6E8;border-radius:50px;padding:9px 18px;display:flex;align-items:center;gap:7px;box-shadow:0 3px 12px #FFB6D944;}
+.timer-ico{color:var(--pink2);font-size:.95rem;}
+#timer{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);letter-spacing:1.5px;min-width:62px;}
+.timer-wrap.danger{border-color:#FF4444;animation:timerDanger .5s ease-in-out infinite alternate;}
+@keyframes timerDanger{from{box-shadow:0 3px 12px #FF444433;}to{box-shadow:0 3px 20px #FF4444AA;}}
+#timer.danger{color:#FF4444;}
+.lvl-badge{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:1.5px;color:var(--pink2);background:#fff;border:1.5px solid #FFD6E8;padding:6px 12px;border-radius:50px;box-shadow:0 2px 8px #FFB6D933;}
+.menu-btn{background:#fff;border:2px solid #FFD6E8;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;color:var(--pink);box-shadow:0 2px 8px #FFB6D944;transition:all .2s;}
+.menu-btn:hover{border-color:var(--pink);box-shadow:0 0 12px #FF149344;}
+
+/* GRID */
+.grid-outer{width:100%;display:flex;justify-content:center;margin:4px 0;}
+#sudoku-grid{display:grid;border:3px solid var(--pink2);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 24px #FF69B433,0 0 0 1px #FFD6E8;}
+.cell{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #FFE4EE;transition:background .15s;}
+.cell.prefilled{background:#FFF0F8;font-weight:800;color:var(--pink);}
+.cell.box-r{border-right:2.5px solid var(--pink2)!important;}
+.cell.box-b{border-bottom:2.5px solid var(--pink2)!important;}
+.cell.wrong{background:#FFE8E8!important;}
+.cell.wrong input{color:#E02020!important;}
+.cell.correct input{color:var(--green-dark);}
+.cell input{width:100%;height:100%;text-align:center;font-family:'Orbitron',sans-serif;font-weight:700;border:none;outline:none;background:transparent;color:#3a6aaa;-moz-appearance:textfield;cursor:pointer;}
+.cell input::-webkit-outer-spin-button,.cell input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.cell input:focus{background:#FFF8FB;}
+
+/* CONTROL BUTTONS */
+.ctrl-row{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;}
+.ctrl-btn{background:#fff;border:2px solid #FFD6E8;border-radius:14px;padding:14px 6px 11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .18s;box-shadow:0 4px 0 #FFB6D9,0 6px 14px #FFD6E822;color:var(--text);}
+.ctrl-btn:hover{border-color:var(--pink2);box-shadow:0 4px 0 var(--pink2),0 6px 16px #FFB6D955;transform:translateY(-2px);}
+.ctrl-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--pink2);}
+.ctrl-btn .ci{font-size:1.4rem;}
+.ctrl-btn .cl{font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+/* HINT COOLDOWN BADGE */
+.hint-cd-badge{position:absolute;top:-6px;right:-6px;background:#FF4444;color:#fff;font-size:.55rem;font-weight:800;border-radius:50px;padding:2px 5px;font-family:'Orbitron',sans-serif;letter-spacing:.5px;pointer-events:none;display:none;}
+.ctrl-btn{position:relative;}
+
+/* END ZONE */
+#gameover-msg{display:none;background:#FFEBEB;border:2px solid #FF6B6B;border-radius:16px;padding:16px 20px;color:#C02020;font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:1.5px;margin-bottom:10px;}
+#win-msg{display:none;background:linear-gradient(135deg,#1A237E,#4a0e8a);border-radius:18px;padding:18px 22px;color:#fff;margin-bottom:10px;box-shadow:0 4px 20px rgba(26,35,126,.35);}
+.win-title{font-family:'Orbitron',sans-serif;font-size:1.05rem;letter-spacing:1px;margin-bottom:8px;}
+.win-stars{font-size:1.7rem;letter-spacing:3px;margin-bottom:7px;}
+.win-quote{font-size:.82rem;opacity:.85;font-style:italic;}
+.end-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+.btn-orange{padding:16px 36px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;border:none;border-radius:50px;cursor:pointer;background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;box-shadow:0 5px 18px rgba(255,152,0,.45);transition:all .2s;letter-spacing:.5px;}
+.btn-orange:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(255,152,0,.6);}
+.btn-orange:active{transform:translateY(1px);}
+.btn-next-ch{padding:16px 36px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;border:none;border-radius:50px;cursor:pointer;background:linear-gradient(135deg,#00C853,#1B5E20);color:#fff;box-shadow:0 5px 18px rgba(0,200,83,.45);transition:all .2s;letter-spacing:.5px;animation:pulseGreen 1.5s ease-in-out infinite;}
+@keyframes pulseGreen{0%,100%{box-shadow:0 5px 18px rgba(0,200,83,.45);}50%{box-shadow:0 5px 30px rgba(0,200,83,.8),0 0 40px rgba(0,200,83,.4);}}
+.btn-next-ch:hover{transform:translateY(-3px);}
+.btn-p{padding:12px 26px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;border:none;border-radius:50px;cursor:pointer;background:linear-gradient(135deg,#FF69B4,#CC1A7A,#9B0EA0);color:#fff;box-shadow:0 5px 16px rgba(255,20,147,.4);transition:all .18s;letter-spacing:.5px;}
+.btn-p:hover{transform:translateY(-3px);filter:brightness(1.1);}
+.btn-p:active{transform:translateY(1px);}
+.btn-s{padding:11px 22px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;border:1.5px solid #FFD6E8;border-radius:50px;cursor:pointer;background:#fff;color:var(--muted);transition:all .2s;}
+.btn-s:hover{border-color:var(--pink2);color:var(--pink);}
+
+/* CHALLENGES PAGE */
+#pg-challenges{padding:12px 8px 20px;gap:14px;}
+.tab-row{width:100%;display:flex;background:#fff;border:2px solid #FFD6E8;border-radius:50px;padding:4px;gap:4px;}
+.tab-btn{flex:1;padding:10px;border:none;border-radius:50px;background:transparent;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;}
+.tab-btn.on{background:linear-gradient(135deg,var(--pink),#9B0EA0);color:#fff;box-shadow:0 3px 10px rgba(255,20,147,.35);}
+.ch-list{width:100%;display:flex;flex-direction:column;gap:10px;}
+.ch-item{width:100%;background:#fff;border:1.5px solid #FFD6E8;border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px #FFB6D922;}
+.ch-item:hover{border-color:var(--pink2);box-shadow:0 4px 16px #FFB6D944;transform:translateX(4px);}
+.ci-name{font-weight:700;font-size:.95rem;color:var(--text);}
+.ci-meta{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.ci-rew{background:#FFF0F8;border:1px solid #FFD6E8;border-radius:50px;padding:4px 10px;font-size:.72rem;color:var(--pink);font-weight:700;}
+.ch-done-badge{display:inline-block;background:linear-gradient(135deg,#00C853,#1B5E20);color:#fff;font-size:.6rem;font-weight:800;border-radius:50px;padding:2px 8px;margin-left:6px;letter-spacing:.5px;}
+
+/* STATS PAGE */
+#pg-stats{padding:12px 8px 20px;gap:14px;}
+.stat-grid{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.stat-card{background:#fff;border:1.5px solid #FFD6E8;border-radius:16px;padding:14px 8px;text-align:center;box-shadow:0 2px 8px #FFB6D922;}
+.stat-v{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;color:var(--pink);margin-bottom:4px;}
+.stat-l{font-size:.62rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+
+/* SETTINGS PAGE */
+#pg-settings{padding:12px 8px 20px;gap:14px;}
+.set-sec{width:100%;background:#fff;border:1.5px solid #FFD6E8;border-radius:20px;overflow:hidden;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #FFE4EE;}
+.set-row:last-child{border-bottom:none;}
+.sr-l{display:flex;align-items:center;gap:10px;}
+.sr-ico{font-size:1.1rem;width:26px;text-align:center;}
+.sr-lbl{font-weight:700;font-size:.9rem;color:var(--text);}
+.sr-sub{font-size:.68rem;color:var(--muted);margin-top:1px;}
+.toggle{position:relative;width:44px;height:24px;background:#e0d0e8;border:1.5px solid #c0a8c8;border-radius:50px;cursor:pointer;transition:background .3s;}
+.toggle.on{background:linear-gradient(135deg,var(--pink),#9B0EA0);border-color:var(--pink);}
+.toggle::after{content:'';position:absolute;width:17px;height:17px;background:#fff;border-radius:50%;top:2px;left:2.5px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+.toggle.on::after{transform:translateX(20px);}
+.btn-ghost{padding:9px 18px;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;border:1.5px solid #FFD6E8;border-radius:50px;cursor:pointer;background:#fff;color:var(--muted);transition:all .2s;}
+.btn-ghost:hover{color:var(--pink);border-color:var(--pink2);}
+
+/* MAIN MENU PAGE */
+#pg-menu{padding:12px 8px 24px;gap:0;}
+.menu-hero{text-align:center;margin-bottom:20px;}
+.menu-hero h1{font-family:'Orbitron',sans-serif;font-size:1.65rem;font-weight:900;color:var(--text);letter-spacing:1.5px;}
+.menu-hero p{font-size:.72rem;letter-spacing:3.5px;color:var(--pink2);text-transform:uppercase;margin-top:5px;}
+.streak-bar{width:100%;background:#fff;border:1.5px solid #FFD6E8;border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;box-shadow:0 2px 10px #FFB6D922;}
+.sk-item{text-align:center;}
+.sk-val{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;color:var(--pink);margin-bottom:3px;}
+.sk-lbl{font-size:.62rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.sk-div{width:1px;height:34px;background:#FFD6E8;}
+.menu-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.menu-card{background:#fff;border:1.5px solid #FFD6E8;border-radius:18px;padding:18px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:7px;box-shadow:0 2px 10px #FFB6D922;}
+.menu-card:hover{border-color:var(--pink2);box-shadow:0 6px 20px #FFB6D955;transform:translateY(-3px);}
+.mc-ico{font-size:1.7rem;}
+.mc-lbl{font-weight:800;font-size:.88rem;letter-spacing:.5px;color:var(--text);}
+.mc-sub{font-size:.68rem;color:var(--muted);}
+.daily-strip{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.daily-card{background:#fff;border:1.5px solid #FFD6E8;border-radius:16px;padding:14px 12px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px #FFB6D922;}
+.daily-card:hover{border-color:var(--pink2);box-shadow:0 4px 16px #FFB6D944;transform:translateY(-2px);}
+.dc-ico{font-size:1.5rem;margin-bottom:6px;}
+.dc-tag{font-size:.6rem;letter-spacing:2.5px;color:var(--pink2);text-transform:uppercase;margin-bottom:4px;}
+.dc-title{font-weight:700;font-size:.88rem;color:var(--text);}
+.dc-info{font-size:.7rem;color:var(--muted);margin-top:2px;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal-box{background:#fff;border:2px solid #FFD6E8;border-radius:24px;padding:26px 22px;width:88%;max-width:340px;text-align:center;box-shadow:0 10px 40px rgba(255,20,147,.2);animation:mIn .28s cubic-bezier(.2,.9,.4,1.1);}
+@keyframes mIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-box h2{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;}
+.modal-box p{font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:18px;}
+.modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+/* PAUSE MENU MODAL */
+#modal-pause .modal-box{text-align:left;padding:20px 18px;}
+#modal-pause .pm-item{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-radius:12px;cursor:pointer;transition:background .18s;margin-bottom:4px;border:1px solid transparent;}
+#modal-pause .pm-item:hover{background:#FFF0F8;border-color:#FFD6E8;}
+#modal-pause .pm-ico{font-size:1.2rem;margin-right:10px;}
+
+/* CHAPTERS MENU MODAL — identical design to pause menu */
+#modal-ch-menu .modal-box{text-align:left;padding:20px 18px;}
+#modal-ch-menu .pm-item{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-radius:12px;cursor:pointer;transition:background .18s;margin-bottom:4px;border:1px solid transparent;}
+#modal-ch-menu .pm-item:hover{background:#FFF0F8;border-color:#FFD6E8;}
+#modal-ch-menu .pm-ico{font-size:1.2rem;margin-right:10px;}
+#modal-ch-menu .pm-lbl{font-weight:700;font-size:.92rem;color:var(--text);}
+#modal-ch-menu .pm-val{font-size:.82rem;color:var(--muted);}
+#modal-pause .pm-lbl{font-weight:700;font-size:.92rem;color:var(--text);}
+#modal-pause .pm-val{font-size:.82rem;color:var(--muted);}
+
+/* HINT MODAL */
+.hint-opt{width:100%;padding:12px 14px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.88rem;border:1.5px solid #FFD6E8;border-radius:12px;background:#fff;color:var(--text);cursor:pointer;text-align:left;margin-bottom:8px;transition:all .18s;}
+.hint-opt:hover{border-color:var(--pink2);background:#FFF0F8;}
+.hint-fb{font-size:.85rem;font-weight:700;margin-top:8px;min-height:20px;}
+
+/* COUNTDOWN */
+#countdown{position:fixed;inset:0;background:rgba(255,240,248,.92);z-index:300;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;}
+#countdown.show{display:flex;}
+#cd-num{font-family:'Orbitron',sans-serif;font-size:5rem;font-weight:900;color:var(--pink);text-shadow:0 0 30px #FF69B4AA;animation:cdPulse .8s ease-in-out;}
+@keyframes cdPulse{from{transform:scale(1.3);opacity:.5}to{transform:scale(1);opacity:1}}
+.cd-label{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:3px;color:var(--muted);}
+
+/* SPRINKLE */
+.sprinkle{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:sprk .7s forwards ease-out;}
+@keyframes sprk{0%{opacity:1;transform:translate(0,0) scale(.2)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(1)}}
+
+/* CELEBRATION OVERLAY */
+#celebration-overlay{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);}
+#celebration-overlay.show{display:flex;}
+.cel-box{background:linear-gradient(135deg,#1A237E,#6a0dad,#FF1493);border-radius:28px;padding:36px 30px;width:88%;max-width:360px;text-align:center;box-shadow:0 10px 60px rgba(255,20,147,.5);animation:celIn .4s cubic-bezier(.2,.9,.4,1.1);}
+@keyframes celIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.cel-title{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#FFD700;letter-spacing:2px;margin-bottom:10px;text-shadow:0 0 20px #FFD70088;}
+.cel-emoji{font-size:3.5rem;margin:12px 0;}
+.cel-msg{color:#fff;font-size:1rem;line-height:1.6;margin-bottom:20px;}
+.cel-stars{font-size:2rem;letter-spacing:5px;margin:8px 0;}
+.confetti-piece{position:absolute;width:8px;height:8px;animation:confFall 3s ease-in forwards;}
+@keyframes confFall{0%{transform:translateY(-100px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+
+/* HINT COOLDOWN TIMER MODAL */
+#modal-hint-cd .modal-box{border:2px solid #FF4444;}
+#hint-cd-timer{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:700;color:#FF4444;margin:10px 0;text-shadow:0 0 10px #FF444455;}
+
+/* TUTORIAL MODAL */
+#modal-tutorial .modal-box{max-width:380px;text-align:left;max-height:80vh;overflow-y:auto;}
+.tut-header{font-family:'Orbitron',sans-serif;font-size:.9rem;color:var(--pink);letter-spacing:1.5px;margin-bottom:12px;text-align:center;}
+.tut-section{background:#FFF0F8;border:1.5px solid #FFD6E8;border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.tut-sec-title{font-weight:800;font-size:.88rem;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.tut-sec-body{font-size:.78rem;color:var(--muted);line-height:1.6;}
+.tut-rule{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;}
+.tut-rule-ico{font-size:.9rem;min-width:20px;}
+
+/* DAILY ALL DONE SCREEN */
+#pg-daily-done{padding:20px;gap:14px;align-items:center;justify-content:center;min-height:60vh;}
+.done-hero{text-align:center;}
+.done-trophy{font-size:5rem;animation:trophyBounce 1s ease-in-out infinite alternate;}
+@keyframes trophyBounce{from{transform:scale(1) rotate(-5deg);}to{transform:scale(1.1) rotate(5deg);}}
+.done-title{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:var(--pink);letter-spacing:2px;margin:14px 0 8px;text-shadow:0 0 10px #FF149355;}
+.done-msg{font-size:.92rem;color:var(--muted);line-height:1.6;text-align:center;margin-bottom:18px;}
+
+@media(max-width:480px){
+  .pg-title{font-size:1rem;}
+  .chapter-card{padding:17px 14px;}
+  .ctrl-btn{padding:12px 4px 9px;}
+  .ctrl-btn .ci{font-size:1.2rem;}
+  .menu-hero h1{font-size:1.35rem;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<audio id="bgm" loop><source src="Song2.mp3" type="audio/mpeg"></audio>
+<audio id="sfx"><source src="button-sound.mp3" type="audio/mpeg"></audio>
+<audio id="sfx2"><source src="button-sound.mp3" type="audio/mpeg"></audio>
+
+<!-- TOP BAR (hidden on menu) -->
+<div class="topbar" id="topbar" style="display:none">
+  <div class="logo-txt">SUDOKU 2.O<span id="topbar-sub">THE NUMBER PLACE</span></div>
+  <div class="topbar-btns">
+    <button class="menu-btn" id="pause-btn" title="Menu" style="font-size:1.3rem;width:42px;height:42px;">☰</button>
+  </div>
+</div>
+
+<!-- MAIN MENU -->
+<div id="pg-menu" class="page active">
+  <div class="menu-hero">
+    <h1 id="mn-title">🌸 SUDOKU 2.O</h1>
+    <p id="mn-sub">◆ The Number Place ◆</p>
+  </div>
+  <div class="neon-div"></div>
+  <div class="daily-strip">
+    <div class="daily-card" id="daily-card">
+      <div class="dc-ico">🌅</div>
+      <div class="dc-tag" id="dc-tag1">◆ Daily ◆</div>
+      <div class="dc-title" id="dc-title1">Daily Challenge</div>
+      <div class="dc-info" id="daily-info">Tap to play</div>
+    </div>
+    <div class="daily-card" id="weekly-card">
+      <div class="dc-ico">🏆</div>
+      <div class="dc-tag" id="dc-tag2">◆ Weekly ◆</div>
+      <div class="dc-title" id="dc-title2">Weekly Challenge</div>
+      <div class="dc-info" id="weekly-info">Tap to play</div>
+    </div>
+  </div>
+  <div class="streak-bar">
+    <div class="sk-item"><div class="sk-val" id="sk-streak">0</div><div class="sk-lbl" id="sk-lbl1">Streak</div></div>
+    <div class="sk-div"></div>
+    <div class="sk-item"><div class="sk-val" id="sk-solved">0</div><div class="sk-lbl" id="sk-lbl2">Solved</div></div>
+    <div class="sk-div"></div>
+    <div class="sk-item"><div class="sk-val" id="sk-best">--</div><div class="sk-lbl" id="sk-lbl3">Best</div></div>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card" id="menu-play"><div class="mc-ico">🎮</div><div class="mc-lbl" id="mn-play">PLAY</div><div class="mc-sub" id="mn-play-sub">Choose chapter</div></div>
+    <div class="menu-card" id="menu-chal"><div class="mc-ico">⚡</div><div class="mc-lbl" id="mn-chal">CHALLENGES</div><div class="mc-sub" id="mn-chal-sub">Daily &amp; weekly</div></div>
+    <div class="menu-card" id="menu-stats"><div class="mc-ico">📊</div><div class="mc-lbl" id="mn-stats">STATS</div><div class="mc-sub" id="mn-stats-sub">Your progress</div></div>
+    <div class="menu-card" id="menu-set"><div class="mc-ico">⚙️</div><div class="mc-lbl" id="mn-settings">SETTINGS</div><div class="mc-sub" id="mn-set-sub">Sound &amp; language</div></div>
+  </div>
+</div>
+
+<!-- CHAPTERS -->
+<div id="pg-chapters" class="page">
+  <div class="pg-title" id="ch-pg-title" style="color:#3a2040">🌸 CHAPTERS 🌸</div>
+  <div class="pg-sub" id="ch-pg-sub">◆ Choose Difficulty ◆</div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:14px">
+    <div class="chapter-card" data-ch="easy" id="card-easy">
+      <div class="ch-ico">🌿</div>
+      <div class="ch-info"><div class="ch-name" id="ch-name-easy">🌿 EASY 🌿</div><div class="ch-sub" id="ch-sub-easy">4×4 · 5 levels · 5 min</div></div>
+      <div class="ch-arr">›</div>
+    </div>
+    <div class="chapter-card" data-ch="medium" id="card-medium">
+      <div class="ch-ico">🌸</div>
+      <div class="ch-info"><div class="ch-name" id="ch-name-medium">🌸 MEDIUM 🌸</div><div class="ch-sub" id="ch-sub-medium">9×9 · 7 levels · 15 min</div></div>
+      <div class="ch-arr">›</div>
+    </div>
+    <div class="chapter-card" data-ch="hard" id="card-hard">
+      <div class="ch-ico">🔥</div>
+      <div class="ch-info"><div class="ch-name" id="ch-name-hard">🔥 HARD 🔥</div><div class="ch-sub" id="ch-sub-hard">12×12 · 10 levels · 25 min</div></div>
+      <div class="ch-arr">›</div>
+    </div>
+  </div>
+  <div style="margin-top:auto;padding-top:18px;display:flex;gap:10px;">
+    <button class="btn-p" id="ch-tutorial-btn" title="Tutorial">📖 HOW TO PLAY</button>
+    <button class="btn-s" id="ch-back">◀ <span class="t-back">BACK</span></button>
+  </div>
+</div>
+
+<!-- LEVELS -->
+<div id="pg-levels" class="page">
+  <div class="pg-title" id="lv-title">EASY LEVELS</div>
+  <div class="pg-sub" id="lv-sub">◆ Pick a Level ◆</div>
+  <div class="levels-list" id="levels-list"></div>
+  <div style="margin-top:12px">
+    <button class="btn-s" id="lv-back">◀ <span class="t-back">BACK</span></button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="pg-game" class="page">
+  <div class="game-hdr">
+    <div class="timer-wrap" id="timer-wrap">
+      <span class="timer-ico">⏱️</span>
+      <div id="timer">05:00</div>
+    </div>
+    <div class="lvl-badge" id="lvl-badge">EASY · L1</div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div id="hint-cd-display" style="font-family:'Orbitron',sans-serif;font-size:.6rem;color:#FF4444;display:none;background:#FFE8E8;border:1px solid #FF4444;border-radius:50px;padding:4px 8px;"></div>
+    </div>
+  </div>
+  <div class="grid-outer"><div id="sudoku-grid"></div></div>
+  <div class="ctrl-row">
+    <button class="ctrl-btn" id="hint-btn"><span class="ci">💡</span><span class="cl" id="cl-hint">HINT</span><span class="hint-cd-badge" id="hint-cd-badge"></span></button>
+    <button class="ctrl-btn" id="undo-btn"><span class="ci">↩️</span><span class="cl" id="cl-undo">UNDO</span></button>
+    <button class="ctrl-btn" id="redo-btn"><span class="ci">↪️</span><span class="cl" id="cl-redo">REDO</span></button>
+    <button class="ctrl-btn" id="undoall-btn"><span class="ci">🗑️</span><span class="cl" id="cl-clear">CLEAR</span></button>
+  </div>
+  <div class="end-zone" id="end-zone">
+    <div id="gameover-msg">💀 <span id="gameover-txt">GAME OVER! Time's up!</span></div>
+    <div id="win-msg">
+      <div class="win-title" id="win-title">🌸 CONGRATULATIONS! 🌸</div>
+      <div class="win-stars" id="win-stars">⭐⭐⭐</div>
+      <div class="win-quote" id="win-quote">"Like cherry blossoms, each number finds its perfect place."</div>
+    </div>
+    <div class="end-btns" id="end-btns"></div>
+  </div>
+</div>
+
+<!-- CHALLENGES PAGE -->
+<div id="pg-challenges" class="page">
+  <div class="pg-title" id="chal-title">⚡ CHALLENGES</div>
+  <div class="neon-div"></div>
+  <div class="tab-row">
+    <button class="tab-btn on" data-tab="daily" id="tab-daily">🌅 <span class="t-daily">DAILY</span></button>
+    <button class="tab-btn" data-tab="weekly" id="tab-weekly">🏆 <span class="t-weekly">WEEKLY</span></button>
+  </div>
+  <div class="ch-list" id="ch-list"></div>
+  <div style="margin-top:auto;padding-top:18px">
+    <button class="btn-s" id="chal-back">◀ <span class="t-back">BACK</span></button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="pg-stats" class="page">
+  <div class="pg-title" id="stats-title">📊 YOUR STATS</div>
+  <div class="neon-div"></div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-v" id="st-solved">0</div><div class="stat-l" id="stl-solved">Solved</div></div>
+    <div class="stat-card"><div class="stat-v" id="st-streak">0</div><div class="stat-l" id="stl-streak">Streak</div></div>
+    <div class="stat-card"><div class="stat-v" id="st-best">--</div><div class="stat-l" id="stl-best">Best</div></div>
+    <div class="stat-card"><div class="stat-v" id="st-easy">0</div><div class="stat-l" id="stl-easy">Easy ⭐</div></div>
+    <div class="stat-card"><div class="stat-v" id="st-med">0</div><div class="stat-l" id="stl-med">Med ⭐</div></div>
+    <div class="stat-card"><div class="stat-v" id="st-hard">0</div><div class="stat-l" id="stl-hard">Hard ⭐</div></div>
+  </div>
+  <div style="margin-top:auto;padding-top:18px">
+    <button class="btn-s" id="stats-back">◀ <span class="t-back">BACK</span></button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="pg-settings" class="page">
+  <div class="pg-title" id="set-title">⚙️ SETTINGS</div>
+  <div class="neon-div"></div>
+  <div class="set-sec">
+    <div class="set-row">
+      <div class="sr-l"><span class="sr-ico">🔊</span><div><div class="sr-lbl" id="set-sfx-lbl">Sound Effects</div><div class="sr-sub" id="set-sfx-sub">Button clicks</div></div></div>
+      <div class="toggle on" id="tog-sfx"></div>
+    </div>
+    <div class="set-row">
+      <div class="sr-l"><span class="sr-ico">🎵</span><div><div class="sr-lbl" id="set-bgm-lbl">Background Music</div><div class="sr-sub" id="set-bgm-sub">Ambient music</div></div></div>
+      <div class="toggle on" id="tog-bgm"></div>
+    </div>
+    <div class="set-row">
+      <div class="sr-l"><span class="sr-ico">✅</span><div><div class="sr-lbl" id="set-ac-lbl">Auto-Check</div><div class="sr-sub" id="set-ac-sub">Highlight errors</div></div></div>
+      <div class="toggle on" id="tog-ac"></div>
+    </div>
+    <div class="set-row">
+      <div class="sr-l"><span class="sr-ico">🌐</span><div><div class="sr-lbl" id="lang-lbl">Language: English</div><div class="sr-sub" id="set-lang-sub">Tap to change</div></div></div>
+      <button class="btn-ghost" id="lang-change-btn">CHANGE</button>
+    </div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <button class="btn-ghost" id="reset-btn" id="set-reset-btn">Reset Progress</button>
+    <button class="btn-s" id="set-back">◀ <span class="t-back">BACK</span></button>
+  </div>
+</div>
+</div><!-- end .app -->
+
+<!-- MODALS -->
+<!-- PAUSE / MENU MODAL (☰) — shown during active GAME -->
+<div class="modal-bg" id="modal-pause">
+  <div class="modal-box" style="text-align:left;padding:18px 16px;">
+    <h2 style="margin-bottom:14px;text-align:center" id="pause-title">☰ MENU</h2>
+    <div class="pm-item" id="pm-resume"><span class="pm-ico">▶️</span><span class="pm-lbl" id="pm-resume-lbl">RESUME</span></div>
+    <div class="pm-item" id="pm-newgame"><span class="pm-ico">🔄</span><span class="pm-lbl" id="pm-new-lbl">NEW GAME</span></div>
+    <div class="pm-item" id="pm-sound"><span class="pm-ico" id="pm-snd-ico">🔊</span><span class="pm-lbl" id="pm-snd-lbl">SOUND ON</span></div>
+    <div class="pm-item" id="pm-bgm-item"><span class="pm-ico" id="pm-bgm-ico">🎵</span><span class="pm-lbl" id="pm-bgm-lbl">MUSIC ON</span></div>
+    <div class="pm-item" id="pm-home"><span class="pm-ico">🏠</span><span class="pm-lbl" id="pm-home-lbl">HOME</span></div>
+    <div class="pm-item" id="pm-lang"><span class="pm-ico">🌐</span><span class="pm-lbl" id="pm-lang-lbl">LANGUAGE</span></div>
+    <div class="pm-item" id="pm-quit" style="color:#E02020"><span class="pm-ico">🚪</span><span class="pm-lbl" style="color:#E02020" id="pm-quit-lbl">QUIT</span></div>
+  </div>
+</div>
+
+<!-- CHAPTERS MENU MODAL (☰ on chapters page) — Resume/NewGame/Sound/Music/Language/Exit -->
+<div class="modal-bg" id="modal-ch-menu">
+  <div class="modal-box" style="text-align:left;padding:20px 18px;">
+    <h2 style="margin-bottom:14px;text-align:center" id="ch-menu-title">☰ MENU</h2>
+    <div class="pm-item" id="chm-resume"><span class="pm-ico">▶️</span><span class="pm-lbl" id="chm-resume-lbl">RESUME</span></div>
+    <div class="pm-item" id="chm-newgame"><span class="pm-ico">🔄</span><span class="pm-lbl" id="chm-new-lbl">NEW GAME</span></div>
+    <div class="pm-item" id="chm-sound"><span class="pm-ico" id="chm-snd-ico">🔊</span><span class="pm-lbl" id="chm-snd-lbl">SOUND ON</span></div>
+    <div class="pm-item" id="chm-bgm"><span class="pm-ico" id="chm-bgm-ico">🎵</span><span class="pm-lbl" id="chm-bgm-lbl">MUSIC ON</span></div>
+    <div class="pm-item" id="chm-lang"><span class="pm-ico">🌐</span><span class="pm-lbl" id="chm-lang-lbl">LANGUAGE</span></div>
+    <div class="pm-item" id="chm-exit"><span class="pm-ico">🚪</span><span class="pm-lbl" id="chm-exit-lbl" style="color:#E02020">EXIT</span></div>
+  </div>
+</div>
+
+<!-- EXIT CONFIRM MODAL -->
+<div class="modal-bg" id="modal-exit-confirm">
+  <div class="modal-box">
+    <h2 id="exit-conf-title" style="margin-bottom:10px">🚪 EXIT</h2>
+    <p id="exit-conf-msg" style="color:var(--muted);margin-bottom:20px">Are you sure you want to exit?</p>
+    <div class="modal-btns">
+      <button class="btn-p" id="exit-yes">EXIT</button>
+      <button class="btn-s" id="exit-no">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal-box">
+    <h2 id="conf-title">CONFIRM</h2>
+    <p id="conf-msg">Are you sure?</p>
+    <div class="modal-btns">
+      <button class="btn-p" id="conf-yes">YES</button>
+      <button class="btn-s" id="conf-no">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- HINT MODAL -->
+<div class="modal-bg" id="modal-hint">
+  <div class="modal-box">
+    <h2 style="margin-bottom:12px" id="hint-modal-title">💡 HINT QUESTION</h2>
+    <p id="hq-text" style="text-align:left;color:var(--text);font-size:.92rem;margin-bottom:12px"></p>
+    <button class="hint-opt" id="hq-a"></button>
+    <button class="hint-opt" id="hq-b"></button>
+    <div class="hint-fb" id="hint-fb"></div>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="btn-s" id="hint-cancel" id="hint-cancel-btn">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- HINT INFO MODAL -->
+<div class="modal-bg" id="modal-hint-info">
+  <div class="modal-box">
+    <h2 id="hi-title">HINT</h2>
+    <p id="hi-msg"></p>
+    <button class="btn-p" id="hi-ok">OK</button>
+  </div>
+</div>
+
+<!-- HINT COOLDOWN MODAL -->
+<div class="modal-bg" id="modal-hint-cd">
+  <div class="modal-box">
+    <h2 id="hcd-title">⏳ HINT COOLDOWN</h2>
+    <p id="hcd-msg">Next hint available in:</p>
+    <div id="hint-cd-timer">00:00</div>
+    <p id="hcd-sub" style="font-size:.75rem;color:var(--muted);margin-top:4px;margin-bottom:16px;">Answer correctly to get +1 hint bonus after timer!</p>
+    <button class="btn-s" id="hcd-close">CLOSE</button>
+  </div>
+</div>
+
+<!-- LANGUAGE MODAL -->
+<div class="modal-bg" id="modal-lang">
+  <div class="modal-box">
+    <h2 style="margin-bottom:12px" id="lang-modal-title">🌐 LANGUAGE</h2>
+    <select id="lang-modal-sel" style="width:100%;padding:12px 16px;border-radius:50px;border:1.5px solid #FFD6E8;background:#fff;font-family:Nunito,sans-serif;font-size:1rem;margin-bottom:16px;cursor:pointer;color:var(--text)">
+      <option value="English">English</option>
+      <option value="Mandarin Chinese">中文 (Mandarin)</option>
+      <option value="Hindi">हिन्दी (Hindi)</option>
+      <option value="Spanish">Español (Spanish)</option>
+      <option value="French">Français (French)</option>
+      <option value="Korean">한국어 (Korean)</option>
+      <option value="Japanese">日本語 (Japanese)</option>
+      <option value="Arabic">العربية (Arabic)</option>
+      <option value="Zuni">Zuni</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-p" id="lang-save">SAVE</button>
+      <button class="btn-s" id="lang-mcancel">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- TUTORIAL MODAL -->
+<div class="modal-bg" id="modal-tutorial">
+  <div class="modal-box">
+    <div class="tut-header" id="tut-title">📖 HOW TO PLAY SUDOKU 2.O</div>
+    <div id="tut-content"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-p" id="tut-close">GOT IT! 🎮</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION OVERLAY -->
+<div id="celebration-overlay">
+  <div class="cel-box" id="cel-box">
+    <div class="cel-emoji" id="cel-emoji">🎉</div>
+    <div class="cel-title" id="cel-title">ALL DONE!</div>
+    <div class="cel-stars" id="cel-stars">⭐⭐⭐</div>
+    <div class="cel-msg" id="cel-msg">Amazing work!</div>
+    <div class="modal-btns">
+      <button class="btn-p" id="cel-ok" style="margin-top:10px">AWESOME! 🌸</button>
+    </div>
+  </div>
+</div>
+
+<div id="countdown"><div id="cd-num">3</div><div class="cd-label" id="cd-label">GET READY</div></div>
+
+<script>
+(function(){
+'use strict';
+
+const $=id=>document.getElementById(id);
+const LS={
+  get:(k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch(e){return def;}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+
+// ===== STATE =====
+const urlP=new URLSearchParams(window.location.search);
+let selLang=urlP.get('lang')||LS.get('lang','English');
+let sfxOn=LS.get('sfx',true);
+let bgmOn=LS.get('bgm',true);
+let autoCheck=LS.get('ac',true);
+let levelStars=LS.get('stars',{easy:{},medium:{},hard:{}});
+let unlocked=LS.get('unlocked',{easy:1,medium:1,hard:1});
+let stats=LS.get('stats',{solved:0,streak:0,lastDate:'',bestTime:99999,eStars:0,mStars:0,hStars:0});
+
+let curCh='',curLv=0;
+let timer=null,timeLeft=300;
+let board=[],initPuz=[],solved=[];
+let N=4,BR=2,BC=2;
+let hist=[],redoSt=[];
+let done=false,failed=false,hadWrong=false;
+let paused=false;
+let hintsUsed=0,hintCD=0,hintCDInterval=null;
+let challengeMode=null;
+
+// Saved game snapshot — set when user goes Home without quitting
+let savedGame=null; // { ch, lv, board, initPuz, solved, hist, timeLeft, hintsUsed, hintCD, hadWrong, N, BR, BC }
+
+// Hint config per level
+const hintMax={easy:4,medium:9,hard:12};
+const hintCoolSec={easy:120,medium:300,hard:300};
+const timeMap={easy:300,medium:900,hard:1500}; // 5, 15, 25 mins
+
+const maxLvs={easy:5,medium:7,hard:10};
+const removeMap={easy:[6,7,8,9,10],medium:[40,44,47,50,52,54,56],hard:[60,65,70,74,78,82,86,90,94,98]};
+
+// ===== TRANSLATIONS =====
+const TR={
+  English:{
+    topSub:"THE NUMBER PLACE", mnTitle:"🌸 SUDOKU 2.O", mnSub:"◆ The Number Place ◆",
+    mnPlay:"PLAY", mnPlaySub:"Choose chapter", mnChal:"CHALLENGES", mnChalSub:"Daily & weekly",
+    mnStats:"STATS", mnStatsSub:"Your progress", mnSettings:"SETTINGS", mnSetSub:"Sound & language",
+    dcTag1:"◆ Daily ◆", dcTitle1:"Daily Challenge", dcTag2:"◆ Weekly ◆", dcTitle2:"Weekly Challenge",
+    tapPlay:"Tap to play", completed:"✅ Completed!",
+    skStreak:"Streak", skSolved:"Solved", skBest:"Best",
+    chPgTitle:"🌸 CHAPTERS 🌸", chPgSub:"◆ Choose Difficulty ◆",
+    chNameEasy:"🌿 EASY 🌿", chSubEasy:"4×4 · 5 levels · 5 min",
+    chNameMed:"🌸 MEDIUM 🌸", chSubMed:"9×9 · 7 levels · 15 min",
+    chNameHard:"🔥 HARD 🔥", chSubHard:"12×12 · 10 levels · 25 min",
+    howToPlay:"📖 HOW TO PLAY", back:"BACK",
+    lvSub:"◆ Pick a Level ◆", tapToPlay:"TAP TO PLAY",
+    clHint:"HINT", clUndo:"UNDO", clRedo:"REDO", clClear:"CLEAR",
+    gameoverTxt:"GAME OVER! Time's up!", winQuote:'"Like cherry blossoms, each number finds its perfect place."',
+    retry:"↺ RETRY", nextLevel:"NEXT LEVEL →", nextChallenge:"NEXT CHALLENGE ⚡", newGame:"🔄 NEW GAME",
+    chalTitle:"⚡ CHALLENGES", tDaily:"DAILY", tWeekly:"WEEKLY",
+    statsTitle:"📊 YOUR STATS", stlSolved:"Solved", stlStreak:"Streak", stlBest:"Best",
+    stlEasy:"Easy ⭐", stlMed:"Med ⭐", stlHard:"Hard ⭐",
+    setTitle:"⚙️ SETTINGS", sfxLbl:"Sound Effects", sfxSub:"Button clicks",
+    bgmLbl:"Background Music", bgmSub:"Ambient music",
+    acLbl:"Auto-Check", acSub:"Highlight errors",
+    langSub:"Tap to change", resetBtn:"Reset Progress", langChange:"CHANGE",
+    langModalTitle:"🌐 LANGUAGE", langSave:"SAVE",
+    pauseTitle:"☰ MENU", pmResume:"RESUME", pmNew:"NEW GAME",
+    pmSoundOn:"SOUND ON", pmSoundOff:"SOUND OFF",
+    pmMusicOn:"MUSIC ON", pmMusicOff:"MUSIC OFF",
+    pmHome:"HOME", pmLang:"LANGUAGE", pmQuit:"QUIT",
+    hintTitle:"💡 HINT QUESTION", hintCancel:"CANCEL",
+    hintCorrect:"✅ Correct! Here is your hint!", hintWrong:"❌ Better luck next time! 😊",
+    hintNoLeft:"No Hints Left", hintNoLeftMsg:"You have used all hints. Wait for cooldown!",
+    hiOk:"OK",
+    hcdTitle:"⏳ HINT COOLDOWN", hcdMsg:"Next hint available in:", hcdSub:"Cooldown ends → +1 bonus hint!",
+    hcdClose:"CLOSE",
+    cdLabel:"GET READY",
+    tutTitle:"📖 HOW TO PLAY SUDOKU 2.O", tutGotIt:"GOT IT! 🎮",
+    celOk:"AWESOME! 🌸",
+    dailyAllDoneTitle:"🏆 ALL CHALLENGES DONE!", dailyAllDoneMsg:"You've completed all daily challenges today! Come back tomorrow for more puzzles. You're unstoppable! 🌸",
+    // Challenge names & meta
+    d0name:"Speed Demon",d0meta:"Solve in under 3 min",
+    d1name:"No Mistakes",d1meta:"Zero wrong cells",
+    d2name:"Perfect Solve",d2meta:"3 stars required",
+    w0name:"Hard Master",w0meta:"Complete Hard Level 3",
+    w1name:"Marathon",w1meta:"Finish 5 levels",
+    w2name:"Unstoppable",w2meta:"No hints used",
+    langLbl:"Language: ",
+    levelLabel:"LEVEL",
+    hintsRem:"hint(s) remaining",
+    cdGetReady:"GET READY",
+    confirmYes:"YES", confirmCancel:"CANCEL", confirmAreYouSure:"Are you sure?",
+    pmExit:"EXIT", pmExitConfirm:"Are you sure you want to exit?", noSavedGame:"No saved game found.", chMenuTitle:"☰ MENU",
+    tutEasy:[
+      {ico:'🎯',text:'Fill a 4×4 grid so every row, column, and 2×2 box contains the numbers 1–4.'},
+      {ico:'⏱️',text:'You have 5 minutes to complete each level.'},
+      {ico:'💡',text:'You get up to 4 hints per game. Answer a trivia question to earn each hint!'},
+      {ico:'⏳',text:'After using a hint, wait 2 minutes before the next one. Then you get 1 bonus hint!'},
+      {ico:'✅',text:'Auto-check highlights your mistakes in red as you type.'},
+      {ico:'↩️',text:'Use Undo/Redo if you make a mistake. CLEAR removes all your entries.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'Fill a 9×9 grid so every row, column, and 3×3 box contains the numbers 1–9.'},
+      {ico:'⏱️',text:'You have 15 minutes per level. Plan carefully!'},
+      {ico:'💡',text:'You get up to 9 hints per game. Answer correctly to unlock each hint.'},
+      {ico:'⏳',text:'Hint cooldown is 5 minutes — then receive 1 bonus hint!'},
+      {ico:'🔍',text:'Use the process of elimination: if a number can only go in one cell in a row, it must go there.'},
+      {ico:'⭐',text:'Solve with no mistakes for 3 stars. One mistake = 2 stars.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'Fill a 12×12 grid so every row, column, and 3×4 box contains the numbers 1–12.'},
+      {ico:'⏱️',text:'You have 25 minutes. Hard mode requires real focus!'},
+      {ico:'💡',text:'You get up to 12 hints. Each hint fills one correct cell for you.'},
+      {ico:'⏳',text:'5-minute hint cooldown — then +1 bonus hint resets the clock.'},
+      {ico:'🧠',text:'Advanced strategy: look for "naked pairs" — two cells in a row that can only have the same two numbers.'},
+      {ico:'🏆',text:"Completing Hard levels unlocks legendary status. You're a Sudoku master!"},
+    ],
+  },
+  "Mandarin Chinese":{
+    topSub:"数字游戏", mnTitle:"🌸 数独 2.O", mnSub:"◆ 数字的位置 ◆",
+    mnPlay:"开始游戏", mnPlaySub:"选择章节", mnChal:"挑战", mnChalSub:"每日与每周",
+    mnStats:"统计", mnStatsSub:"你的进度", mnSettings:"设置", mnSetSub:"声音与语言",
+    dcTag1:"◆ 每日 ◆", dcTitle1:"每日挑战", dcTag2:"◆ 每周 ◆", dcTitle2:"每周挑战",
+    tapPlay:"点击游玩", completed:"✅ 已完成!",
+    skStreak:"连续", skSolved:"已解", skBest:"最佳",
+    chPgTitle:"🌸 章节 🌸", chPgSub:"◆ 选择难度 ◆",
+    chNameEasy:"🌿 简单 🌿", chSubEasy:"4×4 · 5关 · 5分钟",
+    chNameMed:"🌸 中等 🌸", chSubMed:"9×9 · 7关 · 15分钟",
+    chNameHard:"🔥 困难 🔥", chSubHard:"12×12 · 10关 · 25分钟",
+    howToPlay:"📖 玩法说明", back:"返回",
+    lvSub:"◆ 选择关卡 ◆", tapToPlay:"点击开始",
+    clHint:"提示", clUndo:"撤销", clRedo:"重做", clClear:"清除",
+    gameoverTxt:"游戏结束！时间到！", winQuote:'"如樱花般，每个数字都找到了完美的位置。"',
+    retry:"↺ 重试", nextLevel:"下一关 →", nextChallenge:"下一挑战 ⚡", newGame:"🔄 新游戏",
+    chalTitle:"⚡ 挑战", tDaily:"每日", tWeekly:"每周",
+    statsTitle:"📊 你的统计", stlSolved:"已解", stlStreak:"连续", stlBest:"最佳",
+    stlEasy:"简单 ⭐", stlMed:"中等 ⭐", stlHard:"困难 ⭐",
+    setTitle:"⚙️ 设置", sfxLbl:"音效", sfxSub:"按钮点击声",
+    bgmLbl:"背景音乐", bgmSub:"环境音乐",
+    acLbl:"自动检查", acSub:"高亮错误",
+    langSub:"点击更改", resetBtn:"重置进度", langChange:"更改",
+    langModalTitle:"🌐 语言", langSave:"保存",
+    pauseTitle:"☰ 菜单", pmResume:"继续", pmNew:"新游戏",
+    pmSoundOn:"声音开", pmSoundOff:"声音关",
+    pmMusicOn:"音乐开", pmMusicOff:"音乐关",
+    pmHome:"主页", pmLang:"语言", pmQuit:"退出",
+    hintTitle:"💡 提示问题", hintCancel:"取消",
+    hintCorrect:"✅ 正确！给你提示！", hintWrong:"❌ 加油！你可以的！😊",
+    hintNoLeft:"没有提示了", hintNoLeftMsg:"所有提示已用完。等待冷却！",
+    hiOk:"确定",
+    hcdTitle:"⏳ 提示冷却", hcdMsg:"下次提示:", hcdSub:"冷却后获得+1奖励提示！",
+    hcdClose:"关闭",
+    cdLabel:"准备好了",
+    tutTitle:"📖 数独玩法说明", tutGotIt:"明白了！🎮",
+    celOk:"太棒了！🌸",
+    dailyAllDoneTitle:"🏆 所有挑战完成！", dailyAllDoneMsg:"你今天完成了所有每日挑战！明天再来！你太厉害了！🌸",
+    d0name:"速度恶魔",d0meta:"3分钟内解题",
+    d1name:"零失误",d1meta:"零错误格",
+    d2name:"完美解法",d2meta:"需要3颗星",
+    w0name:"困难大师",w0meta:"完成困难第3关",
+    w1name:"马拉松",w1meta:"完成5关",
+    w2name:"势不可挡",w2meta:"不使用提示",
+    langLbl:"语言：",
+    levelLabel:"关卡",
+    hintsRem:"个提示剩余",
+    cdGetReady:"准备好了",
+    confirmYes:"是", confirmCancel:"取消", confirmAreYouSure:"你确定吗？",
+    pmExit:"退出", pmExitConfirm:"你确定要退出吗？", noSavedGame:"没有找到保存的游戏。", chMenuTitle:"☰ 菜单",
+    tutEasy:[
+      {ico:'🎯',text:'填写4×4方格，使每行、每列和每个2×2方块包含数字1–4。'},
+      {ico:'⏱️',text:'每关有5分钟时间。'},
+      {ico:'💡',text:'每局最多4个提示。回答知识问题即可获得提示！'},
+      {ico:'⏳',text:'使用提示后等待2分钟，然后获得1个额外提示！'},
+      {ico:'✅',text:'自动检查会用红色高亮显示错误。'},
+      {ico:'↩️',text:'出错时使用撤销/重做。清除可删除所有输入。'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'填写9×9方格，使每行、每列和每个3×3方块包含数字1–9。'},
+      {ico:'⏱️',text:'每关有15分钟，请仔细规划！'},
+      {ico:'💡',text:'每局最多9个提示，回答正确即可解锁。'},
+      {ico:'⏳',text:'提示冷却时间5分钟，然后获得1个额外提示！'},
+      {ico:'🔍',text:'用排除法：如果某数字在一行中只能填入一格，就必须填在那里。'},
+      {ico:'⭐',text:'无错误完成得3星，有一次错误得2星。'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'填写12×12方格，使每行、每列和每个3×4方块包含数字1–12。'},
+      {ico:'⏱️',text:'有25分钟时间，困难模式需要专注！'},
+      {ico:'💡',text:'最多12个提示，每个提示为你填写一个正确格子。'},
+      {ico:'⏳',text:'5分钟提示冷却，之后+1额外提示重置计时。'},
+      {ico:'🧠',text:'高级策略：寻找"裸对"——一行中只能填入相同两个数字的两格。'},
+      {ico:'🏆',text:'完成困难关卡即解锁传奇称号，你是数独大师！'},
+    ],
+  },
+  "Hindi":{
+    topSub:"नंबर प्लेस", mnTitle:"🌸 सुडोकू 2.O", mnSub:"◆ संख्याओं का खेल ◆",
+    mnPlay:"खेलें", mnPlaySub:"अध्याय चुनें", mnChal:"चुनौतियाँ", mnChalSub:"दैनिक और साप्ताहिक",
+    mnStats:"आँकड़े", mnStatsSub:"आपकी प्रगति", mnSettings:"सेटिंग्स", mnSetSub:"ध्वनि और भाषा",
+    dcTag1:"◆ दैनिक ◆", dcTitle1:"दैनिक चुनौती", dcTag2:"◆ साप्ताहिक ◆", dcTitle2:"साप्ताहिक चुनौती",
+    tapPlay:"खेलने के लिए टैप करें", completed:"✅ पूर्ण!",
+    skStreak:"स्ट्रीक", skSolved:"हल किए", skBest:"सर्वश्रेष्ठ",
+    chPgTitle:"🌸 अध्याय 🌸", chPgSub:"◆ कठिनाई चुनें ◆",
+    chNameEasy:"🌿 आसान 🌿", chSubEasy:"4×4 · 5 स्तर · 5 मिनट",
+    chNameMed:"🌸 मध्यम 🌸", chSubMed:"9×9 · 7 स्तर · 15 मिनट",
+    chNameHard:"🔥 कठिन 🔥", chSubHard:"12×12 · 10 स्तर · 25 मिनट",
+    howToPlay:"📖 कैसे खेलें", back:"वापस",
+    lvSub:"◆ स्तर चुनें ◆", tapToPlay:"खेलने के लिए टैप करें",
+    clHint:"संकेत", clUndo:"पूर्ववत", clRedo:"पुनः करें", clClear:"साफ़ करें",
+    gameoverTxt:"खेल समाप्त! समय खत्म!", winQuote:'"चेरी ब्लॉसम की तरह, हर संख्या अपनी जगह पाती है।"',
+    retry:"↺ पुनः प्रयास", nextLevel:"अगला स्तर →", nextChallenge:"अगली चुनौती ⚡", newGame:"🔄 नया खेल",
+    chalTitle:"⚡ चुनौतियाँ", tDaily:"दैनिक", tWeekly:"साप्ताहिक",
+    statsTitle:"📊 आपके आँकड़े", stlSolved:"हल किए", stlStreak:"स्ट्रीक", stlBest:"सर्वश्रेष्ठ",
+    stlEasy:"आसान ⭐", stlMed:"मध्यम ⭐", stlHard:"कठिन ⭐",
+    setTitle:"⚙️ सेटिंग्स", sfxLbl:"ध्वनि प्रभाव", sfxSub:"बटन क्लिक",
+    bgmLbl:"पृष्ठभूमि संगीत", bgmSub:"परिवेश संगीत",
+    acLbl:"ऑटो-चेक", acSub:"गलतियाँ हाइलाइट करें",
+    langSub:"बदलने के लिए टैप करें", resetBtn:"प्रगति रीसेट करें", langChange:"बदलें",
+    langModalTitle:"🌐 भाषा", langSave:"सहेजें",
+    pauseTitle:"☰ मेन्यू", pmResume:"जारी रखें", pmNew:"नया खेल",
+    pmSoundOn:"ध्वनि चालू", pmSoundOff:"ध्वनि बंद",
+    pmMusicOn:"संगीत चालू", pmMusicOff:"संगीत बंद",
+    pmHome:"होम", pmLang:"भाषा", pmQuit:"छोड़ें",
+    hintTitle:"💡 संकेत प्रश्न", hintCancel:"रद्द करें",
+    hintCorrect:"✅ सही! आपका संकेत!", hintWrong:"❌ अगली बार! 😊",
+    hintNoLeft:"कोई संकेत नहीं", hintNoLeftMsg:"सभी संकेत उपयोग हो गए। प्रतीक्षा करें!",
+    hiOk:"ठीक है",
+    hcdTitle:"⏳ संकेत कूलडाउन", hcdMsg:"अगला संकेत:", hcdSub:"कूलडाउन के बाद +1 बोनस संकेत!",
+    hcdClose:"बंद करें",
+    cdLabel:"तैयार रहें",
+    tutTitle:"📖 सुडोकू 2.O कैसे खेलें", tutGotIt:"समझ गया! 🎮",
+    celOk:"शानदार! 🌸",
+    dailyAllDoneTitle:"🏆 सभी चुनौतियाँ पूरी!", dailyAllDoneMsg:"आपने आज सभी दैनिक चुनौतियाँ पूरी कर लीं! कल वापस आएं! आप अजेय हैं! 🌸",
+    d0name:"स्पीड डेमन",d0meta:"3 मिनट में हल करें",
+    d1name:"कोई गलती नहीं",d1meta:"शून्य गलत सेल",
+    d2name:"परफेक्ट सॉल्व",d2meta:"3 स्टार जरूरी",
+    w0name:"हार्ड मास्टर",w0meta:"हार्ड लेवल 3 पूरा करें",
+    w1name:"मैराथन",w1meta:"5 स्तर पूरे करें",
+    w2name:"अजेय",w2meta:"कोई संकेत नहीं",
+    langLbl:"भाषा: ",
+    levelLabel:"स्तर",
+    hintsRem:"संकेत बचे",
+    cdGetReady:"तैयार रहें",
+    confirmYes:"हाँ", confirmCancel:"रद्द करें", confirmAreYouSure:"क्या आप सुनिश्चित हैं?",
+    pmExit:"बाहर निकलें", pmExitConfirm:"क्या आप वाकई बाहर निकलना चाहते हैं?", noSavedGame:"कोई सहेजा गया गेम नहीं मिला।", chMenuTitle:"☰ मेन्यू",
+    tutEasy:[
+      {ico:'🎯',text:'4×4 ग्रिड भरें ताकि हर पंक्ति, स्तंभ और 2×2 बॉक्स में 1–4 संख्याएँ हों।'},
+      {ico:'⏱️',text:'प्रत्येक स्तर के लिए 5 मिनट का समय।'},
+      {ico:'💡',text:'प्रति गेम 4 संकेत। प्रश्न का सही उत्तर देकर संकेत पाएं!'},
+      {ico:'⏳',text:'संकेत उपयोग के बाद 2 मिनट प्रतीक्षा, फिर 1 बोनस संकेत!'},
+      {ico:'✅',text:'ऑटो-चेक गलतियाँ लाल रंग में दिखाता है।'},
+      {ico:'↩️',text:'गलती होने पर Undo/Redo उपयोग करें। CLEAR सभी प्रविष्टियाँ हटाता है।'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'9×9 ग्रिड भरें ताकि हर पंक्ति, स्तंभ और 3×3 बॉक्स में 1–9 संख्याएँ हों।'},
+      {ico:'⏱️',text:'15 मिनट का समय। ध्यानपूर्वक योजना बनाएं!'},
+      {ico:'💡',text:'9 संकेत उपलब्ध। सही उत्तर देकर संकेत अनलॉक करें।'},
+      {ico:'⏳',text:'5 मिनट संकेत कूलडाउन, फिर 1 बोनस संकेत!'},
+      {ico:'🔍',text:'उन्मूलन प्रक्रिया: यदि कोई संख्या किसी पंक्ति में केवल एक स्थान पर हो, तो वहीं भरें।'},
+      {ico:'⭐',text:'बिना गलती के हल करने पर 3 तारे, एक गलती पर 2 तारे।'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'12×12 ग्रिड भरें ताकि हर पंक्ति, स्तंभ और 3×4 बॉक्स में 1–12 संख्याएँ हों।'},
+      {ico:'⏱️',text:'25 मिनट का समय। कठिन मोड में पूरी एकाग्रता चाहिए!'},
+      {ico:'💡',text:'12 संकेत उपलब्ध। हर संकेत एक सही सेल भरता है।'},
+      {ico:'⏳',text:'5 मिनट कूलडाउन, फिर +1 बोनस संकेत।'},
+      {ico:'🧠',text:'उन्नत रणनीति: "naked pairs" खोजें — दो सेल जिनमें केवल दो ही संख्याएँ हो सकती हैं।'},
+      {ico:'🏆',text:'कठिन स्तर पूरा करने पर आप सुडोकू मास्टर बन जाते हैं!'},
+    ],
+  },
+  "Spanish":{
+    topSub:"EL LUGAR DE NÚMEROS", mnTitle:"🌸 SUDOKU 2.O", mnSub:"◆ El Lugar de Números ◆",
+    mnPlay:"JUGAR", mnPlaySub:"Elegir capítulo", mnChal:"RETOS", mnChalSub:"Diario y semanal",
+    mnStats:"ESTADÍSTICAS", mnStatsSub:"Tu progreso", mnSettings:"AJUSTES", mnSetSub:"Sonido e idioma",
+    dcTag1:"◆ Diario ◆", dcTitle1:"Reto Diario", dcTag2:"◆ Semanal ◆", dcTitle2:"Reto Semanal",
+    tapPlay:"Toca para jugar", completed:"✅ ¡Completado!",
+    skStreak:"Racha", skSolved:"Resueltos", skBest:"Mejor",
+    chPgTitle:"🌸 CAPÍTULOS 🌸", chPgSub:"◆ Elige Dificultad ◆",
+    chNameEasy:"🌿 FÁCIL 🌿", chSubEasy:"4×4 · 5 niveles · 5 min",
+    chNameMed:"🌸 MEDIO 🌸", chSubMed:"9×9 · 7 niveles · 15 min",
+    chNameHard:"🔥 DIFÍCIL 🔥", chSubHard:"12×12 · 10 niveles · 25 min",
+    howToPlay:"📖 CÓMO JUGAR", back:"ATRÁS",
+    lvSub:"◆ Elige un Nivel ◆", tapToPlay:"TOCA PARA JUGAR",
+    clHint:"PISTA", clUndo:"DESHACER", clRedo:"REHACER", clClear:"LIMPIAR",
+    gameoverTxt:"¡GAME OVER! ¡Se acabó el tiempo!", winQuote:'"Como flores de cerezo, cada número encuentra su lugar."',
+    retry:"↺ REINTENTAR", nextLevel:"SIGUIENTE →", nextChallenge:"SIGUIENTE RETO ⚡", newGame:"🔄 NUEVO JUEGO",
+    chalTitle:"⚡ RETOS", tDaily:"DIARIO", tWeekly:"SEMANAL",
+    statsTitle:"📊 TUS ESTADÍSTICAS", stlSolved:"Resueltos", stlStreak:"Racha", stlBest:"Mejor",
+    stlEasy:"Fácil ⭐", stlMed:"Medio ⭐", stlHard:"Difícil ⭐",
+    setTitle:"⚙️ AJUSTES", sfxLbl:"Efectos de Sonido", sfxSub:"Clics de botones",
+    bgmLbl:"Música de Fondo", bgmSub:"Música ambiental",
+    acLbl:"Auto-Verificar", acSub:"Resaltar errores",
+    langSub:"Toca para cambiar", resetBtn:"Reiniciar Progreso", langChange:"CAMBIAR",
+    langModalTitle:"🌐 IDIOMA", langSave:"GUARDAR",
+    pauseTitle:"☰ MENÚ", pmResume:"CONTINUAR", pmNew:"NUEVO JUEGO",
+    pmSoundOn:"SONIDO ON", pmSoundOff:"SONIDO OFF",
+    pmMusicOn:"MÚSICA ON", pmMusicOff:"MÚSICA OFF",
+    pmHome:"INICIO", pmLang:"IDIOMA", pmQuit:"SALIR",
+    hintTitle:"💡 PREGUNTA DE PISTA", hintCancel:"CANCELAR",
+    hintCorrect:"✅ ¡Correcto! ¡Aquí tu pista!", hintWrong:"❌ ¡Sigue intentando! 😊",
+    hintNoLeft:"Sin Pistas", hintNoLeftMsg:"Has usado todas las pistas. ¡Espera el cooldown!",
+    hiOk:"ACEPTAR",
+    hcdTitle:"⏳ COOLDOWN DE PISTA", hcdMsg:"Próxima pista en:", hcdSub:"¡Cooldown = +1 pista bonus!",
+    hcdClose:"CERRAR",
+    cdLabel:"¡PREPARATE!",
+    tutTitle:"📖 CÓMO JUGAR SUDOKU 2.O", tutGotIt:"¡ENTENDIDO! 🎮",
+    celOk:"¡INCREÍBLE! 🌸",
+    dailyAllDoneTitle:"🏆 ¡TODOS LOS RETOS COMPLETADOS!", dailyAllDoneMsg:"¡Completaste todos los retos diarios! ¡Vuelve mañana! ¡Eres imparable! 🌸",
+    d0name:"Demonio Veloz",d0meta:"Resolver en menos de 3 min",
+    d1name:"Sin Errores",d1meta:"Cero celdas incorrectas",
+    d2name:"Solución Perfecta",d2meta:"Se requieren 3 estrellas",
+    w0name:"Maestro Difícil",w0meta:"Completar nivel difícil 3",
+    w1name:"Maratón",w1meta:"Terminar 5 niveles",
+    w2name:"Imparable",w2meta:"Sin pistas usadas",
+    langLbl:"Idioma: ",
+    levelLabel:"NIVEL",
+    hintsRem:"pista(s) restantes",
+    cdGetReady:"¡PREPARATE!",
+    confirmYes:"SÍ", confirmCancel:"CANCELAR", confirmAreYouSure:"¿Estás seguro?",
+    pmExit:"SALIR", pmExitConfirm:"¿Seguro que quieres salir?", noSavedGame:"No se encontró ningún juego guardado.", chMenuTitle:"☰ MENÚ",
+    tutEasy:[
+      {ico:'🎯',text:'Rellena una cuadrícula 4×4 para que cada fila, columna y cuadro 2×2 contenga los números 1–4.'},
+      {ico:'⏱️',text:'Tienes 5 minutos para cada nivel.'},
+      {ico:'💡',text:'Hasta 4 pistas por partida. ¡Responde una pregunta para ganar cada pista!'},
+      {ico:'⏳',text:'Tras usar una pista, espera 2 minutos. ¡Luego obtienes 1 pista bonus!'},
+      {ico:'✅',text:'Auto-verificar resalta tus errores en rojo mientras escribes.'},
+      {ico:'↩️',text:'Usa Deshacer/Rehacer si te equivocas. LIMPIAR elimina todas tus entradas.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'Rellena una cuadrícula 9×9 para que cada fila, columna y cuadro 3×3 contenga los números 1–9.'},
+      {ico:'⏱️',text:'15 minutos por nivel. ¡Planifica con cuidado!'},
+      {ico:'💡',text:'Hasta 9 pistas. Responde correctamente para desbloquear cada pista.'},
+      {ico:'⏳',text:'Cooldown de pista: 5 minutos, luego ¡1 pista bonus!'},
+      {ico:'🔍',text:'Usa la eliminación: si un número solo puede ir en una celda de una fila, debe ir allí.'},
+      {ico:'⭐',text:'Sin errores = 3 estrellas. Un error = 2 estrellas.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'Rellena una cuadrícula 12×12 para que cada fila, columna y cuadro 3×4 contenga los números 1–12.'},
+      {ico:'⏱️',text:'25 minutos. ¡El modo difícil requiere concentración real!'},
+      {ico:'💡',text:'Hasta 12 pistas. Cada pista rellena una celda correcta.'},
+      {ico:'⏳',text:'Cooldown de 5 min, luego +1 pista bonus reinicia el reloj.'},
+      {ico:'🧠',text:'Estrategia avanzada: busca "pares desnudos" — dos celdas en una fila que solo pueden tener los mismos dos números.'},
+      {ico:'🏆',text:'¡Completar niveles difíciles desbloquea el estado legendario. Eres un maestro del Sudoku!'},
+    ],
+  },
+  "French":{
+    topSub:"LE LIEU DES NOMBRES", mnTitle:"🌸 SUDOKU 2.O", mnSub:"◆ Le Lieu des Nombres ◆",
+    mnPlay:"JOUER", mnPlaySub:"Choisir un chapitre", mnChal:"DÉFIS", mnChalSub:"Quotidien et hebdo",
+    mnStats:"STATS", mnStatsSub:"Votre progression", mnSettings:"PARAMÈTRES", mnSetSub:"Son et langue",
+    dcTag1:"◆ Quotidien ◆", dcTitle1:"Défi Quotidien", dcTag2:"◆ Hebdo ◆", dcTitle2:"Défi Hebdomadaire",
+    tapPlay:"Appuyez pour jouer", completed:"✅ Terminé!",
+    skStreak:"Série", skSolved:"Résolus", skBest:"Meilleur",
+    chPgTitle:"🌸 CHAPITRES 🌸", chPgSub:"◆ Choisir la Difficulté ◆",
+    chNameEasy:"🌿 FACILE 🌿", chSubEasy:"4×4 · 5 niveaux · 5 min",
+    chNameMed:"🌸 MOYEN 🌸", chSubMed:"9×9 · 7 niveaux · 15 min",
+    chNameHard:"🔥 DIFFICILE 🔥", chSubHard:"12×12 · 10 niveaux · 25 min",
+    howToPlay:"📖 COMMENT JOUER", back:"RETOUR",
+    lvSub:"◆ Choisir un Niveau ◆", tapToPlay:"APPUYER POUR JOUER",
+    clHint:"INDICE", clUndo:"ANNULER", clRedo:"RÉTABLIR", clClear:"EFFACER",
+    gameoverTxt:"GAME OVER! Temps écoulé!", winQuote:'"Comme les fleurs de cerisier, chaque nombre trouve sa place."',
+    retry:"↺ RÉESSAYER", nextLevel:"NIVEAU SUIVANT →", nextChallenge:"DÉFI SUIVANT ⚡", newGame:"🔄 NOUVEAU JEU",
+    chalTitle:"⚡ DÉFIS", tDaily:"QUOTIDIEN", tWeekly:"HEBDO",
+    statsTitle:"📊 VOS STATS", stlSolved:"Résolus", stlStreak:"Série", stlBest:"Meilleur",
+    stlEasy:"Facile ⭐", stlMed:"Moyen ⭐", stlHard:"Difficile ⭐",
+    setTitle:"⚙️ PARAMÈTRES", sfxLbl:"Effets Sonores", sfxSub:"Clics de boutons",
+    bgmLbl:"Musique de Fond", bgmSub:"Musique ambiante",
+    acLbl:"Vérif. Auto", acSub:"Surligner les erreurs",
+    langSub:"Appuyer pour changer", resetBtn:"Réinitialiser", langChange:"CHANGER",
+    langModalTitle:"🌐 LANGUE", langSave:"SAUVEGARDER",
+    pauseTitle:"☰ MENU", pmResume:"REPRENDRE", pmNew:"NOUVEAU JEU",
+    pmSoundOn:"SON ON", pmSoundOff:"SON OFF",
+    pmMusicOn:"MUSIQUE ON", pmMusicOff:"MUSIQUE OFF",
+    pmHome:"ACCUEIL", pmLang:"LANGUE", pmQuit:"QUITTER",
+    hintTitle:"💡 QUESTION D'INDICE", hintCancel:"ANNULER",
+    hintCorrect:"✅ Correct! Voici votre indice!", hintWrong:"❌ Essayez encore! 😊",
+    hintNoLeft:"Plus d'Indices", hintNoLeftMsg:"Tous les indices utilisés. Attendez le cooldown!",
+    hiOk:"OK",
+    hcdTitle:"⏳ COOLDOWN D'INDICE", hcdMsg:"Prochain indice dans:", hcdSub:"Cooldown = +1 indice bonus!",
+    hcdClose:"FERMER",
+    cdLabel:"PRÊT!",
+    tutTitle:"📖 COMMENT JOUER SUDOKU 2.O", tutGotIt:"COMPRIS! 🎮",
+    celOk:"INCROYABLE! 🌸",
+    dailyAllDoneTitle:"🏆 TOUS LES DÉFIS COMPLÉTÉS!", dailyAllDoneMsg:"Vous avez complété tous les défis quotidiens! Revenez demain! Vous êtes imbattable! 🌸",
+    d0name:"Démon de Vitesse",d0meta:"Résoudre en moins de 3 min",
+    d1name:"Zéro Erreur",d1meta:"Aucune case incorrecte",
+    d2name:"Solution Parfaite",d2meta:"3 étoiles requises",
+    w0name:"Maître Difficile",w0meta:"Terminer niveau difficile 3",
+    w1name:"Marathon",w1meta:"Finir 5 niveaux",
+    w2name:"Inarrêtable",w2meta:"Sans indices utilisés",
+    langLbl:"Langue: ",
+    levelLabel:"NIVEAU",
+    hintsRem:"indice(s) restant(s)",
+    cdGetReady:"PRÊT!",
+    confirmYes:"OUI", confirmCancel:"ANNULER", confirmAreYouSure:"Êtes-vous sûr?",
+    pmExit:"QUITTER", pmExitConfirm:"Voulez-vous vraiment quitter?", noSavedGame:"Aucune partie sauvegardée trouvée.", chMenuTitle:"☰ MENU",
+    tutEasy:[
+      {ico:'🎯',text:'Remplissez une grille 4×4 pour que chaque ligne, colonne et boîte 2×2 contienne les chiffres 1–4.'},
+      {ico:'⏱️',text:'Vous avez 5 minutes par niveau.'},
+      {ico:'💡',text:"Jusqu'à 4 indices par partie. Répondez à une question pour obtenir chaque indice!"},
+      {ico:'⏳',text:"Après un indice, attendez 2 minutes. Puis vous obtenez 1 indice bonus!"},
+      {ico:'✅',text:'La vérification auto surligne vos erreurs en rouge.'},
+      {ico:'↩️',text:'Utilisez Annuler/Rétablir en cas derrurs. EFFACER supprime toutes vos entrées.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'Remplissez une grille 9×9 pour que chaque ligne, colonne et boîte 3×3 contienne les chiffres 1–9.'},
+      {ico:'⏱️',text:'15 minutes par niveau. Planifiez soigneusement!'},
+      {ico:'💡',text:"Jusqu'à 9 indices. Répondez correctement pour les débloquer."},
+      {ico:'⏳',text:'Cooldown de 5 min, puis 1 indice bonus!'},
+      {ico:'🔍',text:"Élimination: si un chiffre ne peut aller que dans une case d'une ligne, il doit y aller."},
+      {ico:'⭐',text:'Sans erreur = 3 étoiles. Une erreur = 2 étoiles.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'Remplissez une grille 12×12 pour que chaque ligne, colonne et boîte 3×4 contienne les chiffres 1–12.'},
+      {ico:'⏱️',text:'25 minutes. Le mode difficile exige une vraie concentration!'},
+      {ico:'💡',text:"Jusqu'à 12 indices. Chaque indice remplit une case correcte."},
+      {ico:'⏳',text:'5 min de cooldown, puis +1 indice bonus réinitialise le chrono.'},
+      {ico:'🧠',text:'Stratégie avancée: cherchez les "paires nues" — deux cases ne pouvant contenir que les mêmes deux chiffres.'},
+      {ico:'🏆',text:'Terminer les niveaux difficiles vous confère le statut légendaire. Vous êtes un maître du Sudoku!'},
+    ],
+  },
+  "Korean":{
+    topSub:"숫자의 자리", mnTitle:"🌸 스도쿠 2.O", mnSub:"◆ 숫자의 자리 ◆",
+    mnPlay:"게임 시작", mnPlaySub:"챕터 선택", mnChal:"도전", mnChalSub:"일일 & 주간",
+    mnStats:"통계", mnStatsSub:"내 진행 상황", mnSettings:"설정", mnSetSub:"소리 & 언어",
+    dcTag1:"◆ 일일 ◆", dcTitle1:"일일 도전", dcTag2:"◆ 주간 ◆", dcTitle2:"주간 도전",
+    tapPlay:"탭하여 플레이", completed:"✅ 완료!",
+    skStreak:"연속", skSolved:"해결", skBest:"최고",
+    chPgTitle:"🌸 챕터 🌸", chPgSub:"◆ 난이도 선택 ◆",
+    chNameEasy:"🌿 쉬움 🌿", chSubEasy:"4×4 · 5단계 · 5분",
+    chNameMed:"🌸 보통 🌸", chSubMed:"9×9 · 7단계 · 15분",
+    chNameHard:"🔥 어려움 🔥", chSubHard:"12×12 · 10단계 · 25분",
+    howToPlay:"📖 플레이 방법", back:"뒤로",
+    lvSub:"◆ 레벨 선택 ◆", tapToPlay:"탭하여 시작",
+    clHint:"힌트", clUndo:"실행 취소", clRedo:"다시 실행", clClear:"지우기",
+    gameoverTxt:"게임 오버! 시간 초과!", winQuote:'"벚꽃처럼, 각 숫자는 완벽한 자리를 찾습니다."',
+    retry:"↺ 다시 시도", nextLevel:"다음 레벨 →", nextChallenge:"다음 도전 ⚡", newGame:"🔄 새 게임",
+    chalTitle:"⚡ 도전", tDaily:"일일", tWeekly:"주간",
+    statsTitle:"📊 내 통계", stlSolved:"해결", stlStreak:"연속", stlBest:"최고",
+    stlEasy:"쉬움 ⭐", stlMed:"보통 ⭐", stlHard:"어려움 ⭐",
+    setTitle:"⚙️ 설정", sfxLbl:"음향 효과", sfxSub:"버튼 클릭",
+    bgmLbl:"배경 음악", bgmSub:"환경 음악",
+    acLbl:"자동 확인", acSub:"오류 강조",
+    langSub:"탭하여 변경", resetBtn:"진행 초기화", langChange:"변경",
+    langModalTitle:"🌐 언어", langSave:"저장",
+    pauseTitle:"☰ 메뉴", pmResume:"계속하기", pmNew:"새 게임",
+    pmSoundOn:"사운드 ON", pmSoundOff:"사운드 OFF",
+    pmMusicOn:"음악 ON", pmMusicOff:"음악 OFF",
+    pmHome:"홈", pmLang:"언어", pmQuit:"나가기",
+    hintTitle:"💡 힌트 질문", hintCancel:"취소",
+    hintCorrect:"✅ 정답! 힌트 드립니다!", hintWrong:"❌ 다시 도전! 😊",
+    hintNoLeft:"힌트 없음", hintNoLeftMsg:"모든 힌트 사용. 쿨다운 대기!",
+    hiOk:"확인",
+    hcdTitle:"⏳ 힌트 쿨다운", hcdMsg:"다음 힌트:", hcdSub:"쿨다운 후 +1 보너스 힌트!",
+    hcdClose:"닫기",
+    cdLabel:"준비!",
+    tutTitle:"📖 스도쿠 2.O 플레이 방법", tutGotIt:"알겠어요! 🎮",
+    celOk:"대단해요! 🌸",
+    dailyAllDoneTitle:"🏆 모든 도전 완료!", dailyAllDoneMsg:"오늘의 모든 일일 도전을 완료했습니다! 내일 다시 오세요! 당신은 최고예요! 🌸",
+    d0name:"스피드 악마",d0meta:"3분 이내에 풀기",
+    d1name:"실수 없음",d1meta:"오답 칸 없음",
+    d2name:"완벽한 풀이",d2meta:"별 3개 필요",
+    w0name:"하드 마스터",w0meta:"어려움 레벨 3 완료",
+    w1name:"마라톤",w1meta:"5 레벨 완료",
+    w2name:"무적",w2meta:"힌트 사용 없음",
+    langLbl:"언어: ",
+    levelLabel:"레벨",
+    hintsRem:"힌트 남음",
+    cdGetReady:"준비!",
+    confirmYes:"예", confirmCancel:"취소", confirmAreYouSure:"확실합니까?",
+    pmExit:"나가기", pmExitConfirm:"정말 나가시겠습니까?", noSavedGame:"저장된 게임이 없습니다.", chMenuTitle:"☰ 메뉴",
+    tutEasy:[
+      {ico:'🎯',text:'4×4 격자를 채워 모든 행, 열, 2×2 박스에 1–4 숫자가 들어가게 하세요.'},
+      {ico:'⏱️',text:'각 레벨은 5분입니다.'},
+      {ico:'💡',text:'게임당 최대 4개의 힌트. 퀴즈에 정답을 맞혀 힌트를 얻으세요!'},
+      {ico:'⏳',text:'힌트 사용 후 2분 대기, 그러면 보너스 힌트 1개!'},
+      {ico:'✅',text:'자동 확인이 실수를 빨간색으로 표시합니다.'},
+      {ico:'↩️',text:'실수하면 실행 취소/다시 실행을 사용하세요. 지우기는 모든 입력을 삭제합니다.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'9×9 격자를 채워 모든 행, 열, 3×3 박스에 1–9 숫자가 들어가게 하세요.'},
+      {ico:'⏱️',text:'레벨당 15분. 신중하게 계획하세요!'},
+      {ico:'💡',text:'최대 9개 힌트. 정답을 맞혀 잠금 해제하세요.'},
+      {ico:'⏳',text:'힌트 쿨다운 5분, 그 후 보너스 힌트 1개!'},
+      {ico:'🔍',text:'소거법: 숫자가 한 행에서 한 칸에만 들어갈 수 있으면 반드시 거기 넣으세요.'},
+      {ico:'⭐',text:'실수 없이 풀면 별 3개, 실수 하나면 2개.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'12×12 격자를 채워 모든 행, 열, 3×4 박스에 1–12 숫자가 들어가게 하세요.'},
+      {ico:'⏱️',text:'25분. 어려운 모드는 진짜 집중력이 필요합니다!'},
+      {ico:'💡',text:'최대 12개 힌트. 각 힌트가 정확한 칸 하나를 채워줍니다.'},
+      {ico:'⏳',text:'5분 쿨다운, 그 후 +1 보너스 힌트가 타이머를 재설정합니다.'},
+      {ico:'🧠',text:'고급 전략: 같은 두 숫자만 가능한 두 칸인 "naked pairs"를 찾으세요.'},
+      {ico:'🏆',text:'어려운 레벨 완료 시 전설 칭호 획득! 당신은 스도쿠 마스터입니다!'},
+    ],
+  },
+  "Japanese":{
+    topSub:"ナンバープレース", mnTitle:"🌸 数独 2.O", mnSub:"◆ ナンバープレース ◆",
+    mnPlay:"プレイ", mnPlaySub:"チャプターを選ぶ", mnChal:"チャレンジ", mnChalSub:"デイリー＆ウィークリー",
+    mnStats:"統計", mnStatsSub:"あなたの進捗", mnSettings:"設定", mnSetSub:"サウンドと言語",
+    dcTag1:"◆ デイリー ◆", dcTitle1:"デイリーチャレンジ", dcTag2:"◆ ウィークリー ◆", dcTitle2:"ウィークリーチャレンジ",
+    tapPlay:"タップしてプレイ", completed:"✅ 完了!",
+    skStreak:"連続", skSolved:"解決済", skBest:"最高",
+    chPgTitle:"🌸 チャプター 🌸", chPgSub:"◆ 難易度を選ぶ ◆",
+    chNameEasy:"🌿 かんたん 🌿", chSubEasy:"4×4 · 5レベル · 5分",
+    chNameMed:"🌸 ふつう 🌸", chSubMed:"9×9 · 7レベル · 15分",
+    chNameHard:"🔥 むずかしい 🔥", chSubHard:"12×12 · 10レベル · 25分",
+    howToPlay:"📖 遊び方", back:"戻る",
+    lvSub:"◆ レベルを選ぶ ◆", tapToPlay:"タップしてプレイ",
+    clHint:"ヒント", clUndo:"元に戻す", clRedo:"やり直す", clClear:"クリア",
+    gameoverTxt:"ゲームオーバー！時間切れ！", winQuote:'"桜の花びらのように、数字はそれぞれの場所を見つける。"',
+    retry:"↺ リトライ", nextLevel:"次のレベル →", nextChallenge:"次のチャレンジ ⚡", newGame:"🔄 新しいゲーム",
+    chalTitle:"⚡ チャレンジ", tDaily:"デイリー", tWeekly:"ウィークリー",
+    statsTitle:"📊 あなたの統計", stlSolved:"解決済", stlStreak:"連続", stlBest:"最高",
+    stlEasy:"かんたん ⭐", stlMed:"ふつう ⭐", stlHard:"むずかしい ⭐",
+    setTitle:"⚙️ 設定", sfxLbl:"サウンドエフェクト", sfxSub:"ボタンクリック",
+    bgmLbl:"バックグラウンドミュージック", bgmSub:"環境音楽",
+    acLbl:"オートチェック", acSub:"エラーをハイライト",
+    langSub:"タップして変更", resetBtn:"進捗をリセット", langChange:"変更",
+    langModalTitle:"🌐 言語", langSave:"保存",
+    pauseTitle:"☰ メニュー", pmResume:"再開", pmNew:"新しいゲーム",
+    pmSoundOn:"サウンドON", pmSoundOff:"サウンドOFF",
+    pmMusicOn:"ミュージックON", pmMusicOff:"ミュージックOFF",
+    pmHome:"ホーム", pmLang:"言語", pmQuit:"やめる",
+    hintTitle:"💡 ヒント問題", hintCancel:"キャンセル",
+    hintCorrect:"✅ 正解！ヒントをどうぞ！", hintWrong:"❌ また挑戦！😊",
+    hintNoLeft:"ヒントなし", hintNoLeftMsg:"すべてのヒント使用済み。クールダウンを待って！",
+    hiOk:"OK",
+    hcdTitle:"⏳ ヒントクールダウン", hcdMsg:"次のヒントまで:", hcdSub:"クールダウン後+1ボーナスヒント！",
+    hcdClose:"閉じる",
+    cdLabel:"準備して！",
+    tutTitle:"📖 数独 2.O の遊び方", tutGotIt:"わかった！🎮",
+    celOk:"すごい！🌸",
+    dailyAllDoneTitle:"🏆 全チャレンジ完了！", dailyAllDoneMsg:"今日のデイリーチャレンジをすべて完了しました！明日また来てね！あなたは最高！🌸",
+    d0name:"スピードデーモン",d0meta:"3分以内に解く",
+    d1name:"ミスなし",d1meta:"誤ったセルなし",
+    d2name:"完璧な解答",d2meta:"3つ星が必要",
+    w0name:"ハードマスター",w0meta:"難しいレベル3をクリア",
+    w1name:"マラソン",w1meta:"5レベルをクリア",
+    w2name:"無敵",w2meta:"ヒントを使わない",
+    langLbl:"言語：",
+    levelLabel:"レベル",
+    hintsRem:"ヒント残り",
+    cdGetReady:"準備して！",
+    confirmYes:"はい", confirmCancel:"キャンセル", confirmAreYouSure:"よろしいですか？",
+    pmExit:"終了", pmExitConfirm:"本当に終了しますか？", noSavedGame:"セーブデータが見つかりません。", chMenuTitle:"☰ メニュー",
+    tutEasy:[
+      {ico:'🎯',text:'4×4のグリッドを埋めて、すべての行・列・2×2ボックスに1〜4の数字が入るようにしましょう。'},
+      {ico:'⏱️',text:'各レベルの制限時間は5分です。'},
+      {ico:'💡',text:'1ゲームで最大4つのヒント。クイズに正解するとヒントがもらえます！'},
+      {ico:'⏳',text:'ヒント使用後2分待つと、ボーナスヒントが1つもらえます！'},
+      {ico:'✅',text:'オートチェックでミスを赤く表示します。'},
+      {ico:'↩️',text:'ミスをした場合は元に戻す/やり直すを使って。クリアで全入力を削除できます。'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'9×9のグリッドを埋めて、すべての行・列・3×3ボックスに1〜9の数字が入るようにしましょう。'},
+      {ico:'⏱️',text:'1レベル15分。慎重に考えましょう！'},
+      {ico:'💡',text:'最大9つのヒント。正解するとアンロックできます。'},
+      {ico:'⏳',text:'ヒントのクールダウンは5分、その後ボーナスヒント1つ！'},
+      {ico:'🔍',text:'消去法を使いましょう：ある数字が1行で1マスにしか入れない場合、そこに入れます。'},
+      {ico:'⭐',text:'ミスなしで3つ星、1ミスで2つ星。'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'12×12のグリッドを埋めて、すべての行・列・3×4ボックスに1〜12の数字が入るようにしましょう。'},
+      {ico:'⏱️',text:'25分。ハードモードは本当に集中力が必要です！'},
+      {ico:'💡',text:'最大12ヒント。各ヒントで正しいセルが1つ埋まります。'},
+      {ico:'⏳',text:'5分クールダウン後、+1ボーナスヒントでリセット。'},
+      {ico:'🧠',text:'上級テクニック：「ネイキッドペア」を探しましょう—同じ2つの数字しか入れない2マス。'},
+      {ico:'🏆',text:'ハードレベルをクリアして伝説の称号を解放！あなたは数独マスターです！'},
+    ],
+  },
+  "Arabic":{
+    topSub:"مكان الأرقام", mnTitle:"🌸 سودوكو 2.O", mnSub:"◆ مكان الأرقام ◆",
+    mnPlay:"العب", mnPlaySub:"اختر الفصل", mnChal:"تحديات", mnChalSub:"يومية وأسبوعية",
+    mnStats:"إحصائيات", mnStatsSub:"تقدمك", mnSettings:"الإعدادات", mnSetSub:"الصوت واللغة",
+    dcTag1:"◆ يومي ◆", dcTitle1:"تحدي يومي", dcTag2:"◆ أسبوعي ◆", dcTitle2:"تحدي أسبوعي",
+    tapPlay:"اضغط للعب", completed:"✅ مكتمل!",
+    skStreak:"تتابع", skSolved:"محلول", skBest:"الأفضل",
+    chPgTitle:"🌸 الفصول 🌸", chPgSub:"◆ اختر الصعوبة ◆",
+    chNameEasy:"🌿 سهل 🌿", chSubEasy:"4×4 · 5 مستويات · 5 دقائق",
+    chNameMed:"🌸 متوسط 🌸", chSubMed:"9×9 · 7 مستويات · 15 دقيقة",
+    chNameHard:"🔥 صعب 🔥", chSubHard:"12×12 · 10 مستويات · 25 دقيقة",
+    howToPlay:"📖 كيف تلعب", back:"رجوع",
+    lvSub:"◆ اختر مستوى ◆", tapToPlay:"اضغط للعب",
+    clHint:"تلميح", clUndo:"تراجع", clRedo:"إعادة", clClear:"مسح",
+    gameoverTxt:"انتهت اللعبة! انتهى الوقت!", winQuote:'"كأزهار الكرز، كل رقم يجد مكانه المثالي."',
+    retry:"↺ إعادة المحاولة", nextLevel:"المستوى التالي →", nextChallenge:"التحدي التالي ⚡", newGame:"🔄 لعبة جديدة",
+    chalTitle:"⚡ تحديات", tDaily:"يومي", tWeekly:"أسبوعي",
+    statsTitle:"📊 إحصائياتك", stlSolved:"محلول", stlStreak:"تتابع", stlBest:"الأفضل",
+    stlEasy:"سهل ⭐", stlMed:"متوسط ⭐", stlHard:"صعب ⭐",
+    setTitle:"⚙️ الإعدادات", sfxLbl:"مؤثرات صوتية", sfxSub:"نقرات الأزرار",
+    bgmLbl:"موسيقى الخلفية", bgmSub:"موسيقى محيطية",
+    acLbl:"فحص تلقائي", acSub:"تمييز الأخطاء",
+    langSub:"اضغط للتغيير", resetBtn:"إعادة التعيين", langChange:"تغيير",
+    langModalTitle:"🌐 اللغة", langSave:"حفظ",
+    pauseTitle:"☰ القائمة", pmResume:"متابعة", pmNew:"لعبة جديدة",
+    pmSoundOn:"الصوت مفعّل", pmSoundOff:"الصوت معطّل",
+    pmMusicOn:"الموسيقى مفعّلة", pmMusicOff:"الموسيقى معطّلة",
+    pmHome:"الرئيسية", pmLang:"اللغة", pmQuit:"خروج",
+    hintTitle:"💡 سؤال التلميح", hintCancel:"إلغاء",
+    hintCorrect:"✅ صحيح! هذا تلميحك!", hintWrong:"❌ حاول مرة أخرى! 😊",
+    hintNoLeft:"لا تلميحات", hintNoLeftMsg:"استُخدمت جميع التلميحات. انتظر!",
+    hiOk:"موافق",
+    hcdTitle:"⏳ مؤقت التلميح", hcdMsg:"التلميح التالي بعد:", hcdSub:"بعد المؤقت +1 تلميح إضافي!",
+    hcdClose:"إغلاق",
+    cdLabel:"استعد!",
+    tutTitle:"📖 كيف تلعب سودوكو 2.O", tutGotIt:"فهمت! 🎮",
+    celOk:"رائع! 🌸",
+    dailyAllDoneTitle:"🏆 أكملت كل التحديات!", dailyAllDoneMsg:"أكملت جميع التحديات اليومية اليوم! عد غداً! أنت لا يُقهر! 🌸",
+    d0name:"شيطان السرعة",d0meta:"الحل في أقل من 3 دقائق",
+    d1name:"بلا أخطاء",d1meta:"صفر خلايا خاطئة",
+    d2name:"حل مثالي",d2meta:"مطلوب 3 نجوم",
+    w0name:"سيد الصعوبة",w0meta:"أكمل المستوى الصعب 3",
+    w1name:"ماراثون",w1meta:"أنهِ 5 مستويات",
+    w2name:"لا يُقهر",w2meta:"بدون استخدام تلميحات",
+    langLbl:"اللغة: ",
+    levelLabel:"المستوى",
+    hintsRem:"تلميح متبقٍ",
+    cdGetReady:"استعد!",
+    confirmYes:"نعم", confirmCancel:"إلغاء", confirmAreYouSure:"هل أنت متأكد؟",
+    pmExit:"خروج", pmExitConfirm:"هل أنت متأكد من الخروج؟", noSavedGame:"لم يتم العثور على لعبة محفوظة.", chMenuTitle:"☰ القائمة",
+    tutEasy:[
+      {ico:'🎯',text:'املأ شبكة 4×4 بحيث تحتوي كل صف وعمود ومربع 2×2 على الأرقام 1–4.'},
+      {ico:'⏱️',text:'لديك 5 دقائق لكل مستوى.'},
+      {ico:'💡',text:'حتى 4 تلميحات لكل لعبة. أجب على سؤال بشكل صحيح للحصول على التلميح!'},
+      {ico:'⏳',text:'بعد استخدام تلميح، انتظر دقيقتين ثم تحصل على تلميح إضافي!'},
+      {ico:'✅',text:'الفحص التلقائي يُظهر أخطاءك باللون الأحمر.'},
+      {ico:'↩️',text:'استخدم التراجع/الإعادة عند الخطأ. مسح يحذف جميع إدخالاتك.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'املأ شبكة 9×9 بحيث تحتوي كل صف وعمود ومربع 3×3 على الأرقام 1–9.'},
+      {ico:'⏱️',text:'15 دقيقة لكل مستوى. خطط بعناية!'},
+      {ico:'💡',text:'حتى 9 تلميحات. أجب صحيحاً لفتح كل تلميح.'},
+      {ico:'⏳',text:'وقت تهدئة التلميح 5 دقائق، ثم تلميح إضافي!'},
+      {ico:'🔍',text:'استخدم الاستبعاد: إذا كان الرقم لا يمكن وضعه إلا في خلية واحدة بالصف، ضعه هناك.'},
+      {ico:'⭐',text:'بدون أخطاء = 3 نجوم، خطأ واحد = 2 نجوم.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'املأ شبكة 12×12 بحيث تحتوي كل صف وعمود ومربع 3×4 على الأرقام 1–12.'},
+      {ico:'⏱️',text:'25 دقيقة. الوضع الصعب يتطلب تركيزاً حقيقياً!'},
+      {ico:'💡',text:'حتى 12 تلميحاً. كل تلميح يملأ خلية صحيحة واحدة.'},
+      {ico:'⏳',text:'5 دقائق تهدئة، ثم +1 تلميح إضافي يعيد ضبط الساعة.'},
+      {ico:'🧠',text:'استراتيجية متقدمة: ابحث عن "الأزواج العارية" — خليتان في صف لا يمكن أن تحتويا إلا على نفس الرقمين.'},
+      {ico:'🏆',text:'إتمام المستويات الصعبة يفتح مكانة أسطورية. أنت أستاذ سودوكو!'},
+    ],
+  },
+  "Zuni":{
+    topSub:"THE NUMBER PLACE", mnTitle:"🌸 SUDOKU 2.O", mnSub:"◆ The Number Place ◆",
+    mnPlay:"PLAY", mnPlaySub:"Choose chapter", mnChal:"CHALLENGES", mnChalSub:"Daily & weekly",
+    mnStats:"STATS", mnStatsSub:"Your progress", mnSettings:"SETTINGS", mnSetSub:"Sound & language",
+    dcTag1:"◆ Daily ◆", dcTitle1:"Daily Challenge", dcTag2:"◆ Weekly ◆", dcTitle2:"Weekly Challenge",
+    tapPlay:"Tap to play", completed:"✅ Completed!",
+    skStreak:"Streak", skSolved:"Solved", skBest:"Best",
+    chPgTitle:"🌸 CHAPTERS 🌸", chPgSub:"◆ Choose Difficulty ◆",
+    chNameEasy:"🌿 EASY 🌿", chSubEasy:"4×4 · 5 levels · 5 min",
+    chNameMed:"🌸 MEDIUM 🌸", chSubMed:"9×9 · 7 levels · 15 min",
+    chNameHard:"🔥 HARD 🔥", chSubHard:"12×12 · 10 levels · 25 min",
+    howToPlay:"📖 HOW TO PLAY", back:"BACK",
+    lvSub:"◆ Pick a Level ◆", tapToPlay:"TAP TO PLAY",
+    clHint:"HINT", clUndo:"UNDO", clRedo:"REDO", clClear:"CLEAR",
+    gameoverTxt:"GAME OVER! Time's up!", winQuote:'"Like cherry blossoms, each number finds its perfect place."',
+    retry:"↺ RETRY", nextLevel:"NEXT LEVEL →", nextChallenge:"NEXT CHALLENGE ⚡", newGame:"🔄 NEW GAME",
+    chalTitle:"⚡ CHALLENGES", tDaily:"DAILY", tWeekly:"WEEKLY",
+    statsTitle:"📊 YOUR STATS", stlSolved:"Solved", stlStreak:"Streak", stlBest:"Best",
+    stlEasy:"Easy ⭐", stlMed:"Med ⭐", stlHard:"Hard ⭐",
+    setTitle:"⚙️ SETTINGS", sfxLbl:"Sound Effects", sfxSub:"Button clicks",
+    bgmLbl:"Background Music", bgmSub:"Ambient music",
+    acLbl:"Auto-Check", acSub:"Highlight errors",
+    langSub:"Tap to change", resetBtn:"Reset Progress", langChange:"CHANGE",
+    langModalTitle:"🌐 LANGUAGE", langSave:"SAVE",
+    pauseTitle:"☰ MENU", pmResume:"RESUME", pmNew:"NEW GAME",
+    pmSoundOn:"SOUND ON", pmSoundOff:"SOUND OFF",
+    pmMusicOn:"MUSIC ON", pmMusicOff:"MUSIC OFF",
+    pmHome:"HOME", pmLang:"LANGUAGE", pmQuit:"QUIT",
+    hintTitle:"💡 HINT QUESTION", hintCancel:"CANCEL",
+    hintCorrect:"✅ Correct! Here is your hint!", hintWrong:"❌ Better luck next time! 😊",
+    hintNoLeft:"No Hints Left", hintNoLeftMsg:"You have used all hints. Wait for cooldown!",
+    hiOk:"OK",
+    hcdTitle:"⏳ HINT COOLDOWN", hcdMsg:"Next hint available in:", hcdSub:"Cooldown ends → +1 bonus hint!",
+    hcdClose:"CLOSE",
+    cdLabel:"GET READY",
+    tutTitle:"📖 HOW TO PLAY SUDOKU 2.O", tutGotIt:"GOT IT! 🎮",
+    celOk:"AWESOME! 🌸",
+    dailyAllDoneTitle:"🏆 ALL CHALLENGES DONE!", dailyAllDoneMsg:"You've completed all daily challenges today! Come back tomorrow! 🌸",
+    d0name:"Speed Demon",d0meta:"Solve in under 3 min",
+    d1name:"No Mistakes",d1meta:"Zero wrong cells",
+    d2name:"Perfect Solve",d2meta:"3 stars required",
+    w0name:"Hard Master",w0meta:"Complete Hard Level 3",
+    w1name:"Marathon",w1meta:"Finish 5 levels",
+    w2name:"Unstoppable",w2meta:"No hints used",
+    langLbl:"Language: ",
+    levelLabel:"LEVEL",
+    hintsRem:"hint(s) remaining",
+    cdGetReady:"GET READY",
+    confirmYes:"YES", confirmCancel:"CANCEL", confirmAreYouSure:"Are you sure?",
+    pmExit:"EXIT", pmExitConfirm:"Are you sure you want to exit?", noSavedGame:"No saved game found.", chMenuTitle:"☰ MENU",
+    tutEasy:[
+      {ico:'🎯',text:'Fill a 4×4 grid so every row, column, and 2×2 box contains the numbers 1–4.'},
+      {ico:'⏱️',text:'You have 5 minutes to complete each level.'},
+      {ico:'💡',text:'You get up to 4 hints per game. Answer a trivia question to earn each hint!'},
+      {ico:'⏳',text:'After using a hint, wait 2 minutes before the next one. Then you get 1 bonus hint!'},
+      {ico:'✅',text:'Auto-check highlights your mistakes in red as you type.'},
+      {ico:'↩️',text:'Use Undo/Redo if you make a mistake. CLEAR removes all your entries.'},
+    ],
+    tutMed:[
+      {ico:'🎯',text:'Fill a 9×9 grid so every row, column, and 3×3 box contains the numbers 1–9.'},
+      {ico:'⏱️',text:'You have 15 minutes per level. Plan carefully!'},
+      {ico:'💡',text:'You get up to 9 hints per game. Answer correctly to unlock each hint.'},
+      {ico:'⏳',text:'Hint cooldown is 5 minutes — then receive 1 bonus hint!'},
+      {ico:'🔍',text:'Use the process of elimination: if a number can only go in one cell in a row, it must go there.'},
+      {ico:'⭐',text:'Solve with no mistakes for 3 stars. One mistake = 2 stars.'},
+    ],
+    tutHard:[
+      {ico:'🎯',text:'Fill a 12×12 grid so every row, column, and 3×4 box contains the numbers 1–12.'},
+      {ico:'⏱️',text:'You have 25 minutes. Hard mode requires real focus!'},
+      {ico:'💡',text:'You get up to 12 hints. Each hint fills one correct cell for you.'},
+      {ico:'⏳',text:'5-minute hint cooldown — then +1 bonus hint resets the clock.'},
+      {ico:'🧠',text:'Advanced strategy: look for "naked pairs" — two cells in a row that can only have the same two numbers.'},
+      {ico:'🏆',text:"Completing Hard levels unlocks legendary status. You're a Sudoku master!"},
+    ],
+  }
+};
+
+function t(key){return (TR[selLang]&&TR[selLang][key])||TR.English[key]||key;}
+
+function applyLang(){
+  const l=t;
+  // topbar
+  $('topbar-sub').textContent=l('topSub');
+  // menu
+  $('mn-title').textContent=l('mnTitle');
+  $('mn-sub').textContent=l('mnSub');
+  $('mn-play').textContent=l('mnPlay');
+  $('mn-play-sub').textContent=l('mnPlaySub');
+  $('mn-chal').textContent=l('mnChal');
+  $('mn-chal-sub').textContent=l('mnChalSub');
+  $('mn-stats').textContent=l('mnStats');
+  $('mn-stats-sub').textContent=l('mnStatsSub');
+  $('mn-settings').textContent=l('mnSettings');
+  $('mn-set-sub').textContent=l('mnSetSub');
+  $('dc-tag1').textContent=l('dcTag1');
+  $('dc-title1').textContent=l('dcTitle1');
+  $('dc-tag2').textContent=l('dcTag2');
+  $('dc-title2').textContent=l('dcTitle2');
+  $('sk-lbl1').textContent=l('skStreak');
+  $('sk-lbl2').textContent=l('skSolved');
+  $('sk-lbl3').textContent=l('skBest');
+  // chapters
+  $('ch-pg-title').textContent=l('chPgTitle');
+  $('ch-pg-sub').textContent=l('chPgSub');
+  $('ch-name-easy').textContent=l('chNameEasy');
+  $('ch-sub-easy').textContent=l('chSubEasy');
+  $('ch-name-medium').textContent=l('chNameMed');
+  $('ch-sub-medium').textContent=l('chSubMed');
+  $('ch-name-hard').textContent=l('chNameHard');
+  $('ch-sub-hard').textContent=l('chSubHard');
+  $('ch-tutorial-btn').textContent=l('howToPlay');
+  // back buttons
+  document.querySelectorAll('.t-back').forEach(el=>el.textContent=l('back'));
+  // levels
+  $('lv-sub').textContent=l('lvSub');
+  // game controls
+  $('cl-hint').textContent=l('clHint');
+  $('cl-undo').textContent=l('clUndo');
+  $('cl-redo').textContent=l('clRedo');
+  $('cl-clear').textContent=l('clClear');
+  $('win-quote').textContent=l('winQuote');
+  $('gameover-txt').textContent=l('gameoverTxt');
+  // challenges
+  $('chal-title').textContent=l('chalTitle');
+  document.querySelectorAll('.t-daily').forEach(el=>el.textContent=l('tDaily'));
+  document.querySelectorAll('.t-weekly').forEach(el=>el.textContent=l('tWeekly'));
+  // stats
+  $('stats-title').textContent=l('statsTitle');
+  $('stl-solved').textContent=l('stlSolved');
+  $('stl-streak').textContent=l('stlStreak');
+  $('stl-best').textContent=l('stlBest');
+  $('stl-easy').textContent=l('stlEasy');
+  $('stl-med').textContent=l('stlMed');
+  $('stl-hard').textContent=l('stlHard');
+  // settings
+  $('set-title').textContent=l('setTitle');
+  $('set-sfx-lbl').textContent=l('sfxLbl');
+  $('set-sfx-sub').textContent=l('sfxSub');
+  $('set-bgm-lbl').textContent=l('bgmLbl');
+  $('set-bgm-sub').textContent=l('bgmSub');
+  $('set-ac-lbl').textContent=l('acLbl');
+  $('set-ac-sub').textContent=l('acSub');
+  $('set-lang-sub').textContent=l('langSub');
+  $('lang-lbl').textContent=l('langLbl')+selLang;
+  // modal texts
+  $('pause-title').textContent=l('pauseTitle');
+  $('pm-resume-lbl').textContent=l('pmResume');
+  $('pm-new-lbl').textContent=l('pmNew');
+  $('pm-home-lbl').textContent=l('pmHome');
+  $('pm-lang-lbl').textContent=l('pmLang');
+  $('pm-quit-lbl').textContent=l('pmQuit');
+  $('hint-modal-title').textContent=l('hintTitle');
+  $('hint-cancel').textContent=l('hintCancel');
+  $('hcd-title').textContent=l('hcdTitle');
+  $('hcd-msg').textContent=l('hcdMsg');
+  $('hcd-sub').textContent=l('hcdSub');
+  $('hcd-close').textContent=l('hcdClose');
+  $('cd-label').textContent=l('cdGetReady');
+  $('cel-ok').textContent=l('celOk');
+  $('tut-title').textContent=l('tutTitle');
+  $('tut-close').textContent=l('tutGotIt');
+  // confirm modal buttons
+  $('conf-yes').textContent=l('confirmYes');
+  $('conf-no').textContent=l('confirmCancel');
+  // hint info ok
+  $('hi-ok').textContent=l('hiOk');
+  // language modal
+  $('lang-modal-title').textContent=l('langModalTitle');
+  $('lang-save').textContent=l('langSave');
+  $('lang-mcancel').textContent=l('confirmCancel');
+  // settings buttons
+  $('lang-change-btn').textContent=l('langChange');
+  $('reset-btn').textContent=l('resetBtn');
+  // chapters menu modal
+  $('ch-menu-title').textContent=l('chMenuTitle');
+  $('chm-resume-lbl').textContent=l('pmResume');
+  $('chm-new-lbl').textContent=l('pmNew');
+  $('chm-lang-lbl').textContent=l('pmLang');
+  $('chm-exit-lbl').textContent=l('pmExit');
+  $('exit-conf-title').textContent='🚪 '+l('pmExit');
+  $('exit-conf-msg').textContent=l('pmExitConfirm');
+  $('exit-yes').textContent=l('pmExit');
+  $('exit-no').textContent=l('confirmCancel');
+  updateChaptersMenuSoundLabels();
+  updateChallengeInfo();
+  if(curCh) $('lv-title').textContent=curCh.toUpperCase()+' '+t('levelLabel')+'S';
+  updatePauseSoundLabels();
+  // Re-render challenges in current active tab so names/meta translate live
+  const activeTab=document.querySelector('.tab-btn.on');
+  if(activeTab) loadChallenges(activeTab.dataset.tab);
+}
+
+// ===== SOUND =====
+const bgm=$('bgm');
+bgm.volume=0.35;
+function tryMusic(){if(bgmOn)bgm.play().catch(()=>{});}
+tryMusic();
+document.addEventListener('click',tryMusic,{once:true});
+
+function playClick(){
+  if(!sfxOn) return;
+  try{
+    const s=new Audio('button-sound.mp3');
+    s.volume=0.65;
+    s.play().catch(()=>{});
+  }catch(e){}
+}
+function sprinkle(el){
+  if(!el) return;
+  const r=el.getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const sp=document.createElement('div');sp.className='sprinkle';
+    const colors=['#FFD700','#87CEEB','#FF69B4','#98FB98'];
+    sp.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const sx=Math.random()*r.width,sy=Math.random()*r.height;
+    const ang=Math.random()*Math.PI*2,dist=30+Math.random()*50;
+    sp.style.left=sx+'px';sp.style.top=sy+'px';
+    sp.style.setProperty('--tx',(Math.cos(ang)*dist)+'px');
+    sp.style.setProperty('--ty',(Math.sin(ang)*dist)+'px');
+    el.appendChild(sp);sp.addEventListener('animationend',()=>sp.remove());
+  }
+}
+function clickFX(el){playClick();if(el)sprinkle(el);}
+
+// Global click sound — catches ANY button/clickable that wasn't explicitly wired
+document.addEventListener('click',function(e){
+  const tgt=e.target.closest('button,.chapter-card,.menu-card,.daily-card,.pm-item,.ch-item,.hint-opt,.level-btn,.tab-btn,.toggle,.icon-btn,.menu-btn,.ctrl-btn');
+  if(tgt&&sfxOn){playClick();}
+},{capture:true,passive:true});
+
+// ===== NAVIGATION =====
+function showPg(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $(id).classList.add('active');
+  // Show topbar on all pages except main menu
+  $('topbar').style.display=(id==='pg-menu')?'none':'flex';
+}
+function saveCurrentGame(){
+  if(board.length&&curCh&&curLv&&!done&&!failed){
+    savedGame={
+      ch:curCh, lv:curLv,
+      board:board.map(r=>[...r]),
+      initPuz:initPuz.map(r=>[...r]),
+      solved:solved.map(r=>[...r]),
+      hist:[...hist], timeLeft, hintsUsed, hintCD, hadWrong,
+      N, BR, BC
+    };
+  }
+}
+function goMenu(){
+  saveCurrentGame();
+  clearTimer();stopHintCDDisplay();
+  showPg('pg-menu');updateMenuStats();
+}
+
+$('menu-play').addEventListener('click',e=>{clickFX(e.currentTarget);showPg('pg-chapters');});
+$('menu-chal').addEventListener('click',e=>{clickFX(e.currentTarget);loadChallenges('daily');showPg('pg-challenges');});
+$('menu-stats').addEventListener('click',e=>{clickFX(e.currentTarget);updateStatsPage();showPg('pg-stats');});
+$('menu-set').addEventListener('click',e=>{clickFX(e.currentTarget);showPg('pg-settings');});
+$('daily-card').addEventListener('click',e=>{clickFX(e.currentTarget);launchChallenge('daily');});
+$('weekly-card').addEventListener('click',e=>{clickFX(e.currentTarget);launchChallenge('weekly');});
+$('ch-back').addEventListener('click',e=>{clickFX(e.currentTarget);goMenu();});
+$('lv-back').addEventListener('click',e=>{clickFX(e.currentTarget);showPg('pg-chapters');});
+$('chal-back').addEventListener('click',e=>{clickFX(e.currentTarget);goMenu();});
+$('stats-back').addEventListener('click',e=>{clickFX(e.currentTarget);goMenu();});
+$('set-back').addEventListener('click',e=>{clickFX(e.currentTarget);goMenu();});
+$('ch-tutorial-btn').addEventListener('click',e=>{clickFX(e.currentTarget);showTutorial();});
+$('tut-close').addEventListener('click',e=>{clickFX(e.currentTarget);closeModal('modal-tutorial');});
+$('cel-ok').addEventListener('click',e=>{clickFX(e.currentTarget);$('celebration-overlay').classList.remove('show');clearConfetti();goMenu();});
+$('hcd-close').addEventListener('click',e=>{playClick();closeModal('modal-hint-cd');});
+
+// chapter cards
+document.querySelectorAll('.chapter-card').forEach(c=>{
+  c.addEventListener('click',e=>{
+    clickFX(e.currentTarget);
+    curCh=c.dataset.ch;challengeMode=null;
+    buildLevels();showPg('pg-levels');
+  });
+});
+
+// ===== TOPBAR ☰ BUTTON — opens chapters menu OR game pause menu =====
+function updateChaptersMenuSoundLabels(){
+  if($('chm-snd-ico')) $('chm-snd-ico').textContent=sfxOn?'🔊':'🔇';
+  if($('chm-snd-lbl')) $('chm-snd-lbl').textContent=sfxOn?t('pmSoundOn'):t('pmSoundOff');
+  if($('chm-bgm-ico')) $('chm-bgm-ico').textContent=bgmOn?'🎵':'🔇';
+  if($('chm-bgm-lbl')) $('chm-bgm-lbl').textContent=bgmOn?t('pmMusicOn'):t('pmMusicOff');
+}
+$('pause-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  const activePg=document.querySelector('.page.active');
+  if(activePg&&activePg.id==='pg-chapters'){
+    // Chapters page — open chapters-specific menu
+    updateChaptersMenuSoundLabels();
+    openModal('modal-ch-menu');
+  } else {
+    // Game page (or others) — open game pause menu
+    if(done||failed) return;
+    paused=true;openModal('modal-pause');
+  }
+});
+$('chm-resume').addEventListener('click',()=>{
+  playClick();
+  closeModal('modal-ch-menu');
+  if(!savedGame){
+    // No saved game — show brief info and close
+    const info=document.createElement('div');
+    info.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#3a2040;color:#fff;padding:12px 22px;border-radius:50px;font-family:Nunito,sans-serif;font-weight:700;font-size:.9rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    info.textContent=t('noSavedGame');
+    document.body.appendChild(info);
+    setTimeout(()=>info.remove(),2200);
+    return;
+  }
+  // Restore saved game
+  curCh=savedGame.ch; curLv=savedGame.lv;
+  board=savedGame.board.map(r=>[...r]);
+  initPuz=savedGame.initPuz.map(r=>[...r]);
+  solved=savedGame.solved.map(r=>[...r]);
+  hist=[...savedGame.hist];
+  redoSt=[];
+  timeLeft=savedGame.timeLeft;
+  hintsUsed=savedGame.hintsUsed;
+  hintCD=savedGame.hintCD;
+  hadWrong=savedGame.hadWrong;
+  N=savedGame.N; BR=savedGame.BR; BC=savedGame.BC;
+  done=false; failed=false; paused=false;
+
+  // Restore grid UI
+  $('gameover-msg').style.display='none';
+  $('win-msg').style.display='none';
+  $('end-btns').innerHTML='';
+  $('hint-cd-display').style.display='none';
+  $('hint-cd-badge').style.display='none';
+  $('timer').textContent=fmt(timeLeft);
+  $('timer').className='';
+  $('timer-wrap').className='timer-wrap';
+  $('lvl-badge').textContent=savedGame.ch.toUpperCase()+' · '+t('levelLabel')+savedGame.lv;
+  renderGrid();
+
+  // Restore user inputs from saved board
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    if(!initPuz[r][c]&&board[r][c]){
+      const cell=cellEl(r,c);
+      if(cell){
+        const inp=cell.querySelector('input');
+        if(inp) inp.value=board[r][c];
+        if(autoCheck){
+          if(board[r][c]!==solved[r][c]) cell.classList.add('wrong');
+          else cell.classList.add('correct');
+        }
+      }
+    }
+  }
+
+  showPg('pg-game');
+  runCountdown(()=>{ startTimer(); });
+});
+
+// Chapters menu: NEW GAME
+$('chm-newgame').addEventListener('click',()=>{
+  playClick();
+  closeModal('modal-ch-menu');
+  if(!savedGame){
+    const info=document.createElement('div');
+    info.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#3a2040;color:#fff;padding:12px 22px;border-radius:50px;font-family:Nunito,sans-serif;font-weight:700;font-size:.9rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    info.textContent=t('noSavedGame');
+    document.body.appendChild(info);
+    setTimeout(()=>info.remove(),2200);
+    return;
+  }
+  // Restart the same level fresh
+  curCh=savedGame.ch; curLv=savedGame.lv;
+  challengeMode=null;
+  savedGame=null; // clear saved game
+  showPg('pg-game');
+  startGame();
+});
+
+// Chapters menu: SOUND toggle
+$('chm-sound').addEventListener('click',()=>{
+  playClick();sfxOn=!sfxOn;LS.set('sfx',sfxOn);
+  updateChaptersMenuSoundLabels();applyToggles();
+});
+
+// Chapters menu: MUSIC toggle
+$('chm-bgm').addEventListener('click',()=>{
+  playClick();bgmOn=!bgmOn;LS.set('bgm',bgmOn);
+  if(bgmOn)bgm.play().catch(()=>{});else bgm.pause();
+  updateChaptersMenuSoundLabels();applyToggles();
+});
+
+// Chapters menu: LANGUAGE
+$('chm-lang').addEventListener('click',()=>{
+  playClick();closeModal('modal-ch-menu');
+  $('lang-modal-sel').value=selLang;openModal('modal-lang');
+});
+
+// Chapters menu: EXIT button → show exit confirm modal
+$('chm-exit').addEventListener('click',()=>{
+  playClick();
+  closeModal('modal-ch-menu');
+  openModal('modal-exit-confirm');
+});
+
+// Exit confirm modal buttons
+$('exit-yes').addEventListener('click',()=>{
+  playClick();
+  closeModal('modal-exit-confirm');
+  savedGame=null;
+  clearTimer();stopHintCDDisplay();
+  // Stop all music before going to first page
+  bgm.pause(); bgm.currentTime=0;
+  bgmOn=false; LS.set('bgm',false);
+  setTimeout(()=>{ window.location.href='index.html'; },260);
+});
+$('exit-no').addEventListener('click',()=>{
+  playClick();
+  closeModal('modal-exit-confirm');
+});
+
+// ===== LEVELS =====
+function buildLevels(){
+  $('lv-title').textContent=curCh.toUpperCase()+' '+t('levelLabel')+'S';
+  const max=maxLvs[curCh]||5;
+  const list=$('levels-list');list.innerHTML='';
+  for(let i=1;i<=max;i++){
+    const locked=(i>unlocked[curCh]);
+    const sts=(levelStars[curCh]||{})[i]||0;
+    const btn=document.createElement('button');
+    btn.className='level-btn '+(locked?'locked':'unlocked');
+    btn.innerHTML=`<div class="lv-left"><div class="lv-num">${t('levelLabel')} ${i}</div><div class="lv-lbl">${locked?'🔒':t('tapToPlay')}</div></div>
+      <div class="lv-right">${locked?'<span class="lock-ico">🔒</span>':'<span class="lv-stars">'+stars(sts)+'</span>'}`;
+    if(!locked){
+      btn.addEventListener('click',e=>{clickFX(e.currentTarget);curLv=i;startGame();showPg('pg-game');});
+    }
+    list.appendChild(btn);
+  }
+}
+function stars(n){return '⭐'.repeat(n)+'☆'.repeat(3-n);}
+
+// ===== SUDOKU LOGIC =====
+function genSolved(n,br,bc){
+  const b=Array.from({length:n},()=>Array(n).fill(0));
+  const nums=Array.from({length:n},(_,i)=>i+1);
+  function ok(b,r,c,v){
+    for(let x=0;x<n;x++) if(b[r][x]===v||b[x][c]===v) return false;
+    const sr=Math.floor(r/br)*br,sc=Math.floor(c/bc)*bc;
+    for(let i=0;i<br;i++) for(let j=0;j<bc;j++) if(b[sr+i][sc+j]===v) return false;
+    return true;
+  }
+  function solve(b){
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+      if(!b[r][c]){
+        for(const v of [...nums].sort(()=>Math.random()-.5)){
+          if(ok(b,r,c,v)){b[r][c]=v;if(solve(b))return true;b[r][c]=0;}
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+  solve(b);return b;
+}
+function makePuzzle(sol,n,removeN){
+  const p=sol.map(r=>[...r]);
+  let cnt=0,att=0;
+  while(cnt<removeN&&att<n*n*8){
+    const r=Math.floor(Math.random()*n),c=Math.floor(Math.random()*n);
+    if(p[r][c]){p[r][c]=0;cnt++;}att++;
+  }
+  return p;
+}
+
+// ===== START GAME =====
+function startGame(){
+  done=false;failed=false;hadWrong=false;paused=false;
+  hintsUsed=0;hintCD=0;hist=[];redoSt=[];
+  stopHintCDDisplay();
+  $('gameover-msg').style.display='none';
+  $('win-msg').style.display='none';
+  $('end-btns').innerHTML='';
+  $('hint-cd-display').style.display='none';
+  $('hint-cd-badge').style.display='none';
+  if(curCh==='easy'){N=4;BR=2;BC=2;}
+  else if(curCh==='medium'){N=9;BR=3;BC=3;}
+  else{N=12;BR=3;BC=4;}
+  const rmIdx=Math.min(curLv-1,removeMap[curCh].length-1);
+  const rm=removeMap[curCh][rmIdx];
+  solved=genSolved(N,BR,BC);
+  initPuz=makePuzzle(solved,N,rm);
+  board=initPuz.map(r=>[...r]);
+  renderGrid();
+  timeLeft=timeMap[curCh];
+  $('timer').textContent=fmt(timeLeft);
+  $('timer').className='';
+  $('timer-wrap').className='timer-wrap';
+  $('lvl-badge').textContent=curCh.toUpperCase()+' · '+t('levelLabel')+curLv;
+  clearTimer();
+  runCountdown(()=>{startTimer();});
+}
+function clearTimer(){if(timer){clearInterval(timer);timer=null;}}
+function startTimer(){
+  timer=setInterval(()=>{
+    if(paused||done||failed) return;
+    timeLeft--;
+    $('timer').textContent=fmt(timeLeft);
+    // Danger zone: last 60s
+    if(timeLeft<=60&&timeLeft>0){
+      $('timer').classList.add('danger');
+      $('timer-wrap').classList.add('danger');
+    }
+    if(timeLeft<=0){
+      clearTimer();failed=true;
+      $('gameover-msg').style.display='block';
+      const b=$('end-btns');b.innerHTML='';
+      const ng=document.createElement('button');
+      ng.className='btn-orange';ng.textContent=t('newGame');
+      ng.addEventListener('click',e=>{clickFX(e.currentTarget);startGame();});
+      b.appendChild(ng);
+      disableGrid();
+    }
+  },1000);
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+// ===== GRID =====
+function renderGrid(){
+  const con=$('sudoku-grid');con.innerHTML='';
+  const maxW=Math.min(400,Math.floor(window.innerWidth*.88));
+  const cs=Math.floor(maxW/N);
+  con.style.gridTemplateColumns=`repeat(${N},${cs}px)`;
+  con.style.width=`${cs*N}px`;
+  const fs=Math.max(11,Math.floor(cs*.44));
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cell.dataset.r=r;cell.dataset.c=c;
+    cell.style.width=cell.style.height=cs+'px';
+    cell.style.fontSize=fs+'px';
+    if((c+1)%BC===0&&c!==N-1) cell.classList.add('box-r');
+    if((r+1)%BR===0&&r!==N-1) cell.classList.add('box-b');
+    if(board[r][c]){
+      cell.classList.add('prefilled');
+      cell.textContent=board[r][c];
+      cell.style.fontSize=Math.floor(fs*1.05)+'px';
+    } else {
+      const inp=document.createElement('input');
+      inp.type='number';inp.min=1;inp.max=N;inp.style.fontSize=fs+'px';
+      inp.addEventListener('input',ev=>onInput(ev,r,c));
+      cell.appendChild(inp);
+    }
+    con.appendChild(cell);
+  }
+}
+function cellEl(r,c){return document.querySelector(`#sudoku-grid .cell[data-r="${r}"][data-c="${c}"]`);}
+function onInput(ev,r,c){
+  const inp=ev.target;let v=parseInt(inp.value);
+  if(isNaN(v)||v<1||v>N){inp.value='';v=0;}
+  if(board[r][c]!==v){hist.push({r,c,old:board[r][c],nw:v});redoSt=[];board[r][c]=v;}
+  if(autoCheck&&v){
+    const cell=cellEl(r,c);
+    if(v!==solved[r][c]){cell.classList.add('wrong');cell.classList.remove('correct');hadWrong=true;}
+    else{cell.classList.remove('wrong');cell.classList.add('correct');}
+  }
+  checkWin();
+}
+function setCell(r,c,v){
+  board[r][c]=v;
+  const cell=cellEl(r,c);if(!cell) return;
+  const inp=cell.querySelector('input');
+  if(inp){
+    inp.value=v||'';
+    cell.classList.remove('wrong','correct');
+    if(autoCheck&&v){
+      if(v!==solved[r][c]){cell.classList.add('wrong');hadWrong=true;}
+      else cell.classList.add('correct');
+    }
+  }
+}
+function disableGrid(){document.querySelectorAll('#sudoku-grid input').forEach(i=>i.disabled=true);}
+function checkWin(){
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    if(!board[r][c]||board[r][c]!==solved[r][c]) return;
+  }
+  if(done) return;
+  done=true;clearTimer();disableGrid();stopHintCDDisplay();
+  const elapsed=timeMap[curCh]-timeLeft;
+  const st=hadWrong?2:3;
+  const prev=(levelStars[curCh]||{})[curLv]||0;
+  if(st>prev){
+    if(!levelStars[curCh]) levelStars[curCh]={};
+    levelStars[curCh][curLv]=st;LS.set('stars',levelStars);
+  }
+  if(!challengeMode&&curLv<maxLvs[curCh]){
+    unlocked[curCh]=Math.max(unlocked[curCh],curLv+1);
+    LS.set('unlocked',unlocked);
+  }
+  stats.solved=(stats.solved||0)+1;
+  const today=new Date().toDateString();
+  if(stats.lastDate!==today){
+    const yd=new Date();yd.setDate(yd.getDate()-1);
+    if(stats.lastDate!==yd.toDateString()) stats.streak=0;
+    stats.streak=(stats.streak||0)+1;stats.lastDate=today;
+  }
+  if(elapsed<(stats.bestTime||99999)) stats.bestTime=elapsed;
+  if(curCh==='easy') stats.eStars=(stats.eStars||0)+st;
+  else if(curCh==='medium') stats.mStars=(stats.mStars||0)+st;
+  else stats.hStars=(stats.hStars||0)+st;
+  LS.set('stats',stats);
+
+  if(challengeMode==='daily') LS.set('dailyDone',new Date().toDateString());
+  if(challengeMode==='weekly'){const w=Math.floor(Date.now()/(7*864e5));LS.set('weeklyDone',w);}
+
+  // win UI
+  $('win-title').textContent=`🌸 ${t('levelLabel')} ${curLv} ✅ 🌸`;
+  $('win-stars').textContent=stars(st);
+  $('win-msg').style.display='block';
+  const btns=$('end-btns');btns.innerHTML='';
+  const retry=document.createElement('button');retry.className='btn-s';retry.textContent=t('retry');
+  retry.addEventListener('click',e=>{clickFX(e.currentTarget);startGame();});
+  btns.appendChild(retry);
+
+  // Check if all daily challenges done
+  const allDailiesDone=checkAllDailiesDone();
+
+  if(challengeMode){
+    if(allDailiesDone){
+      // Show celebration after short delay
+      setTimeout(()=>showDailyAllDoneCelebration(),600);
+    } else {
+      // Show next challenge button
+      const nextIdx=getNextChallengeIdx();
+      if(nextIdx!==null){
+        const ncBtn=document.createElement('button');
+        ncBtn.className='btn-next-ch';
+        ncBtn.textContent=t('nextChallenge');
+        ncBtn.addEventListener('click',e=>{
+          clickFX(e.currentTarget);
+          loadNextChallenge(nextIdx);
+        });
+        btns.appendChild(ncBtn);
+      }
+    }
+  } else if(curLv<maxLvs[curCh]){
+    const nl=document.createElement('button');nl.className='btn-p';nl.textContent=t('nextLevel');
+    nl.addEventListener('click',e=>{clickFX(e.currentTarget);curLv++;startGame();});
+    btns.appendChild(nl);
+  }
+  updateMenuStats();
+}
+
+// ===== DAILY CHALLENGE COMPLETION =====
+let currentChallengeList=[];
+let currentChallengeIdx=0;
+
+function checkAllDailiesDone(){
+  if(!challengeMode) return false;
+  const list=challengeMode==='daily'?DAILY_CHS:WEEKLY_CHS;
+  if(challengeMode==='daily'){
+    const done=LS.get('dailyDone','')===new Date().toDateString();
+    // If all items in daily done (simplified check)
+    return list.every((_,i)=>LS.get('ch_done_daily_'+i,'')=== new Date().toDateString());
+  }
+  return false;
+}
+
+function getNextChallengeIdx(){
+  const list=challengeMode==='daily'?DAILY_CHS:WEEKLY_CHS;
+  const today=new Date().toDateString();
+  for(let i=0;i<list.length;i++){
+    if(LS.get('ch_done_'+challengeMode+'_'+i,'')!==today) return i;
+  }
+  return null;
+}
+
+function markChallengeDone(idx){
+  if(challengeMode) LS.set('ch_done_'+challengeMode+'_'+idx, new Date().toDateString());
+}
+
+function loadNextChallenge(idx){
+  const list=challengeMode==='daily'?DAILY_CHS:WEEKLY_CHS;
+  const ch=list[idx];
+  currentChallengeIdx=idx;
+  curCh=ch.ch;curLv=ch.lv;
+  startGame();showPg('pg-game');
+}
+
+function showDailyAllDoneCelebration(){
+  launchConfetti();
+  $('cel-emoji').textContent='🏆';
+  $('cel-title').textContent=t('dailyAllDoneTitle').replace('🏆 ','');
+  $('cel-stars').textContent='🌟🌟🌟🌟🌟';
+  $('cel-msg').textContent=t('dailyAllDoneMsg');
+  $('celebration-overlay').classList.add('show');
+}
+
+// confetti
+let confettiPieces=[];
+function launchConfetti(){
+  clearConfetti();
+  const cel=$('celebration-overlay');
+  const colors=['#FFD700','#FF1493','#00E676','#2196F3','#FF5722','#E91E63','#9C27B0'];
+  for(let i=0;i<50;i++){
+    const p=document.createElement('div');
+    p.className='confetti-piece';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.left=Math.random()*100+'vw';
+    p.style.top='-20px';
+    p.style.width=(6+Math.random()*6)+'px';
+    p.style.height=(6+Math.random()*6)+'px';
+    p.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    p.style.animationDuration=(2+Math.random()*2)+'s';
+    p.style.animationDelay=(Math.random()*1.5)+'s';
+    cel.appendChild(p);
+    confettiPieces.push(p);
+  }
+}
+function clearConfetti(){confettiPieces.forEach(p=>p.remove());confettiPieces=[];}
+
+// ===== CONTROLS =====
+$('undo-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  if(!hist.length||done||failed) return;
+  const m=hist.pop();redoSt.push(m);setCell(m.r,m.c,m.old);
+});
+$('redo-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  if(!redoSt.length||done||failed) return;
+  const m=redoSt.pop();hist.push(m);setCell(m.r,m.c,m.nw);checkWin();
+});
+$('undoall-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  if(done||failed) return;
+  while(hist.length){const m=hist.pop();redoSt.push(m);setCell(m.r,m.c,m.old);}
+});
+
+// ===== PAUSE MENU (game page) handlers =====
+$('pm-resume').addEventListener('click',()=>{
+  playClick();closeModal('modal-pause');
+  runCountdown(()=>{paused=false;});
+});
+$('pm-newgame').addEventListener('click',()=>{
+  playClick();closeModal('modal-pause');
+  confirmDlg(t('pmNew'),'',()=>{paused=false;startGame();},()=>{openModal('modal-pause');});
+});
+$('pm-sound').addEventListener('click',()=>{
+  playClick();sfxOn=!sfxOn;LS.set('sfx',sfxOn);
+  updatePauseSoundLabels();applyToggles();
+});
+$('pm-bgm-item').addEventListener('click',()=>{
+  playClick();bgmOn=!bgmOn;LS.set('bgm',bgmOn);
+  if(bgmOn)bgm.play().catch(()=>{});else bgm.pause();
+  updatePauseSoundLabels();applyToggles();
+});
+$('pm-home').addEventListener('click',()=>{
+  playClick();closeModal('modal-pause');
+  paused=false;clearTimer();goMenu();
+});
+$('pm-lang').addEventListener('click',()=>{
+  playClick();closeModal('modal-pause');
+  $('lang-modal-sel').value=selLang;openModal('modal-lang');
+});
+$('pm-quit').addEventListener('click',()=>{
+  playClick();closeModal('modal-pause');
+  confirmDlg(t('pmQuit'),'',()=>{paused=false;clearTimer();showPg('pg-chapters');},()=>{openModal('modal-pause');});
+});
+
+function updatePauseSoundLabels(){
+  $('pm-snd-ico').textContent=sfxOn?'🔊':'🔇';
+  $('pm-snd-lbl').textContent=sfxOn?t('pmSoundOn'):t('pmSoundOff');
+  $('pm-bgm-ico').textContent=bgmOn?'🎵':'🔇';
+  $('pm-bgm-lbl').textContent=bgmOn?t('pmMusicOn'):t('pmMusicOff');
+  updateChaptersMenuSoundLabels();
+}
+
+// ===== HINTS =====
+let hintBonusGiven=false;
+
+// CD display interval
+let hintCDDisplayIv=null;
+function stopHintCDDisplay(){
+  if(hintCDDisplayIv){clearInterval(hintCDDisplayIv);hintCDDisplayIv=null;}
+  $('hint-cd-display').style.display='none';
+  $('hint-cd-badge').style.display='none';
+}
+function startHintCDDisplay(){
+  stopHintCDDisplay();
+  $('hint-cd-display').style.display='block';
+  $('hint-cd-badge').style.display='block';
+  hintBonusGiven=false;
+  hintCDDisplayIv=setInterval(()=>{
+    const rem=Math.max(0,Math.ceil(hintCD-Date.now()/1000));
+    if(rem<=0){
+      // Give bonus hint
+      if(!hintBonusGiven){
+        hintBonusGiven=true;
+        hintsUsed=Math.max(0,hintsUsed-1);
+        stopHintCDDisplay();
+      }
+      return;
+    }
+    const mm=Math.floor(rem/60),ss=rem%60;
+    const txt=String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    $('hint-cd-display').textContent='⏳ '+txt;
+    $('hint-cd-badge').textContent=txt;
+    $('hint-cd-badge').style.display='block';
+    // Update modal if open
+    if($('modal-hint-cd').classList.contains('open')) $('hint-cd-timer').textContent=txt;
+  },500);
+}
+
+$('hint-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  if(done||failed) return;
+  const maxH=hintMax[curCh];
+  const rem=maxH-hintsUsed;
+  const now=Date.now()/1000;
+  if(rem<=0){
+    // Show cooldown info
+    if(now<hintCD){
+      const wait=Math.ceil(hintCD-now);
+      const mm=Math.floor(wait/60),ss=wait%60;
+      $('hint-cd-timer').textContent=String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+      openModal('modal-hint-cd');
+    } else {
+      showHintInfo(t('hintNoLeft'),t('hintNoLeftMsg'));
+    }
+    return;
+  }
+  if(now<hintCD){
+    const wait=Math.ceil(hintCD-now);
+    const mm=Math.floor(wait/60),ss=wait%60;
+    $('hint-cd-timer').textContent=String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    openModal('modal-hint-cd');
+    return;
+  }
+  presentHQ();
+});
+
+function getHintQuestions(){
+  // Use questions.js if available
+  if(window.QUESTIONS&&window.QUESTIONS[selLang]&&window.QUESTIONS[selLang][curCh]){
+    return window.QUESTIONS[selLang][curCh];
+  }
+  // Fallback English
+  if(window.QUESTIONS&&window.QUESTIONS['English']&&window.QUESTIONS['English'][curCh]){
+    return window.QUESTIONS['English'][curCh];
+  }
+  // Built-in fallback
+  return [
+    {question:'What is 7 × 8?',options:['56','54'],correct:'56'},
+    {question:'Capital of France?',options:['Paris','London'],correct:'Paris'},
+    {question:'How many sides in a hexagon?',options:['6','8'],correct:'6'},
+  ];
+}
+
+function presentHQ(){
+  const pool=getHintQuestions();
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  $('hq-text').textContent=q.question;
+  const maxH=hintMax[curCh];
+  $('hint-fb').textContent=`${maxH-hintsUsed} ${t('hintsRem')}.`;
+  $('hint-fb').style.color='';
+  const opts=[...q.options].sort(()=>Math.random()-.5);
+  $('hq-a').textContent=opts[0];
+  $('hq-b').textContent=opts[1];
+  const ha=$('hq-a').cloneNode(true),hb=$('hq-b').cloneNode(true);
+  $('hq-a').replaceWith(ha);$('hq-b').replaceWith(hb);
+  function ans(chosen){
+    if(chosen===q.correct){
+      $('hint-fb').textContent=t('hintCorrect');
+      $('hint-fb').style.color='#2a8a2a';
+      giveHint();hintsUsed++;
+      hintCD=Date.now()/1000+hintCoolSec[curCh];
+      startHintCDDisplay();
+      setTimeout(()=>closeModal('modal-hint'),1300);
+    } else {
+      $('hint-fb').textContent=t('hintWrong');
+      $('hint-fb').style.color='#C02020';
+    }
+  }
+  ha.addEventListener('click',()=>{playClick();ans(opts[0]);});
+  hb.addEventListener('click',()=>{playClick();ans(opts[1]);});
+  openModal('modal-hint');
+}
+$('hint-cancel').addEventListener('click',()=>{playClick();closeModal('modal-hint');});
+function giveHint(){
+  for(let att=0;att<N*N*6;att++){
+    const r=Math.floor(Math.random()*N),c=Math.floor(Math.random()*N);
+    if(!board[r][c]&&!initPuz[r][c]){
+      hist.push({r,c,old:0,nw:solved[r][c]});redoSt=[];
+      setCell(r,c,solved[r][c]);checkWin();return;
+    }
+  }
+}
+function showHintInfo(title,msg){$('hi-title').textContent=title;$('hi-msg').textContent=msg;openModal('modal-hint-info');}
+$('hi-ok').addEventListener('click',()=>{playClick();closeModal('modal-hint-info');});
+
+// ===== COUNTDOWN =====
+function runCountdown(cb){
+  let n=3;
+  const ov=$('countdown');const cd=$('cd-num');
+  ov.classList.add('show');
+  cd.textContent=n;
+  playClick();
+  const iv=setInterval(()=>{
+    n--;
+    if(n>0){
+      cd.textContent=n;
+      playClick();
+    } else if(n===0){
+      cd.textContent='GO! 🌸';
+      playClick();
+    } else {
+      clearInterval(iv);ov.classList.remove('show');if(cb)cb();
+    }
+  },1000);
+}
+
+// ===== MODALS =====
+function openModal(id){$(id).classList.add('open');}
+function closeModal(id){$(id).classList.remove('open');}
+function confirmDlg(title,msg,onYes,onNo){
+  $('conf-title').textContent=title;
+  $('conf-msg').textContent=msg||t('confirmAreYouSure');
+  $('conf-yes').textContent=t('confirmYes');
+  $('conf-no').textContent=t('confirmCancel');
+  const y=$('conf-yes'),n=$('conf-no');
+  const y2=y.cloneNode(true),n2=n.cloneNode(true);
+  y.replaceWith(y2);n.replaceWith(n2);
+  y2.addEventListener('click',()=>{playClick();closeModal('modal-confirm');if(onYes)onYes();});
+  n2.addEventListener('click',()=>{playClick();closeModal('modal-confirm');if(onNo)onNo();});
+  openModal('modal-confirm');
+}
+
+// ===== SETTINGS =====
+function applyToggles(){
+  $('tog-sfx').className='toggle'+(sfxOn?' on':'');
+  $('tog-bgm').className='toggle'+(bgmOn?' on':'');
+  $('tog-ac').className='toggle'+(autoCheck?' on':'');
+  $('lang-lbl').textContent=t('langLbl')+selLang;
+}
+$('tog-sfx').addEventListener('click',()=>{sfxOn=!sfxOn;LS.set('sfx',sfxOn);applyToggles();playClick();});
+$('tog-bgm').addEventListener('click',()=>{bgmOn=!bgmOn;LS.set('bgm',bgmOn);applyToggles();if(bgmOn)bgm.play().catch(()=>{});else bgm.pause();});
+$('tog-ac').addEventListener('click',()=>{autoCheck=!autoCheck;LS.set('ac',autoCheck);applyToggles();playClick();});
+$('lang-change-btn').addEventListener('click',e=>{clickFX(e.currentTarget);$('lang-modal-sel').value=selLang;openModal('modal-lang');});
+$('lang-save').addEventListener('click',()=>{
+  playClick();
+  selLang=$('lang-modal-sel').value;
+  LS.set('lang',selLang);
+  closeModal('modal-lang');
+  applyLang();
+  applyToggles();
+  updateMenuStats();
+  updateChallengeInfo();
+  if(curCh) buildLevels();
+  loadChallenges(document.querySelector('.tab-btn.on')?.dataset.tab||'daily');
+});
+$('lang-mcancel').addEventListener('click',()=>{playClick();closeModal('modal-lang');});
+$('reset-btn').addEventListener('click',e=>{
+  clickFX(e.currentTarget);
+  confirmDlg('⚠️ Reset','Reset ALL progress?',()=>{
+    levelStars={easy:{},medium:{},hard:{}};unlocked={easy:1,medium:1,hard:1};
+    stats={solved:0,streak:0,lastDate:'',bestTime:99999,eStars:0,mStars:0,hStars:0};
+    LS.set('stars',levelStars);LS.set('unlocked',unlocked);LS.set('stats',stats);
+    LS.set('dailyDone','');LS.set('weeklyDone','');
+    updateMenuStats();
+  },null);
+});
+
+// ===== TUTORIAL =====
+function showTutorial(){
+  const tabs=['easy','medium','hard'];
+  let activeTab=curCh||'easy';
+  function renderTut(ch){
+    // Get rules from current language translation
+    const rulesKey={easy:'tutEasy',medium:'tutMed',hard:'tutHard'}[ch];
+    const rules=t(rulesKey);
+    const content=$('tut-content');
+    content.innerHTML='';
+    const tabRow=document.createElement('div');
+    tabRow.style.cssText='display:flex;gap:6px;margin-bottom:12px;';
+    tabs.forEach(tab=>{
+      const btn=document.createElement('button');
+      btn.style.cssText=`flex:1;padding:8px 4px;border-radius:50px;border:1.5px solid #FFD6E8;font-family:Nunito,sans-serif;font-weight:700;font-size:.75rem;cursor:pointer;transition:all .2s;background:${tab===ch?'linear-gradient(135deg,var(--pink),#9B0EA0)':'#fff'};color:${tab===ch?'#fff':'var(--muted)'};`;
+      btn.textContent={easy:t('chNameEasy').replace(/🌿/g,'').trim(),medium:t('chNameMed').replace(/🌸/g,'').trim(),hard:t('chNameHard').replace(/🔥/g,'').trim()}[tab];
+      btn.addEventListener('click',()=>{playClick();renderTut(tab);});
+      tabRow.appendChild(btn);
+    });
+    content.appendChild(tabRow);
+    rules.forEach(rule=>{
+      const div=document.createElement('div');
+      div.className='tut-rule';
+      div.innerHTML=`<span class="tut-rule-ico">${rule.ico}</span><span style="font-size:.8rem;color:var(--text);line-height:1.55;">${rule.text}</span>`;
+      content.appendChild(div);
+    });
+  }
+  renderTut(activeTab);
+  openModal('modal-tutorial');
+}
+
+// ===== CHALLENGES =====
+// nameKey/metaKey reference TR keys so they auto-translate with t()
+const DAILY_CHS=[
+  {nameKey:'d0name',metaKey:'d0meta',reward:'+50pts',ch:'easy',lv:1},
+  {nameKey:'d1name',metaKey:'d1meta',reward:'+40pts',ch:'medium',lv:2},
+  {nameKey:'d2name',metaKey:'d2meta',reward:'+60pts',ch:'easy',lv:2},
+];
+const WEEKLY_CHS=[
+  {nameKey:'w0name',metaKey:'w0meta',reward:'+150pts',ch:'hard',lv:3},
+  {nameKey:'w1name',metaKey:'w1meta',reward:'+100pts',ch:'medium',lv:4},
+  {nameKey:'w2name',metaKey:'w2meta',reward:'+80pts',ch:'hard',lv:1},
+];
+function loadChallenges(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  const list=$('ch-list');list.innerHTML='';
+  const today=new Date().toDateString();
+  const w=Math.floor(Date.now()/(7*864e5));
+  const chs=tab==='daily'?DAILY_CHS:WEEKLY_CHS;
+  chs.forEach((ch,i)=>{
+    const isDone=(tab==='daily'?LS.get('ch_done_daily_'+i,''):LS.get('ch_done_weekly_'+i,''))===(tab==='daily'?today:w+'');
+    const chName=t(ch.nameKey);
+    const chMeta=t(ch.metaKey);
+    const div=document.createElement('div');div.className='ch-item';
+    div.innerHTML=`<div><div class="ci-name">${chName}${isDone?`<span class="ch-done-badge">✓ ${t('completed').replace('✅ ','')}</span>`:''}</div><div class="ci-meta">${chMeta}</div></div><div class="ci-rew">${ch.reward}</div>`;
+    div.addEventListener('click',e=>{
+      clickFX(e.currentTarget);
+      currentChallengeIdx=i;
+      curCh=ch.ch;curLv=ch.lv;challengeMode=tab;
+      startGame();showPg('pg-game');
+    });
+    list.appendChild(div);
+  });
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',e=>{clickFX(e.currentTarget);loadChallenges(b.dataset.tab);}));
+function launchChallenge(type){
+  const chs=type==='daily'?DAILY_CHS:WEEKLY_CHS;
+  const today=new Date().toDateString();
+  const w=Math.floor(Date.now()/(7*864e5));
+  // Find first uncompleted
+  let idx=0;
+  for(let i=0;i<chs.length;i++){
+    const done=(type==='daily'?LS.get('ch_done_daily_'+i,''):LS.get('ch_done_weekly_'+i,''))===(type==='daily'?today:w+'');
+    if(!done){idx=i;break;}
+  }
+  currentChallengeIdx=idx;
+  curCh=chs[idx].ch;curLv=chs[idx].lv;challengeMode=type;
+  startGame();showPg('pg-game');
+}
+
+// ===== STATS & MENU =====
+function updateMenuStats(){
+  $('sk-streak').textContent=stats.streak||0;
+  $('sk-solved').textContent=stats.solved||0;
+  $('sk-best').textContent=(stats.bestTime<99999)?fmt(stats.bestTime):'--';
+}
+function updateStatsPage(){
+  $('st-solved').textContent=stats.solved||0;
+  $('st-streak').textContent=stats.streak||0;
+  $('st-best').textContent=(stats.bestTime<99999)?fmt(stats.bestTime):'--';
+  $('st-easy').textContent=stats.eStars||0;
+  $('st-med').textContent=stats.mStars||0;
+  $('st-hard').textContent=stats.hStars||0;
+}
+function updateChallengeInfo(){
+  const dailyDone=LS.get('dailyDone','')===new Date().toDateString();
+  const w=Math.floor(Date.now()/(7*864e5));
+  const weeklyDone=LS.get('weeklyDone',0)===w;
+  $('daily-info').textContent=dailyDone?t('completed'):t('tapPlay');
+  $('weekly-info').textContent=weeklyDone?t('completed'):t('tapPlay');
+}
+
+// ===== INIT =====
+applyToggles();
+applyLang();
+updateMenuStats();s
+updateChallengeInfo();
+loadChallenges('daily');
+showPg('pg-menu');
+tryMusic();
+updateChaptersMenuSoundLabels();
+})();
+</script>
+</body>
+</html>

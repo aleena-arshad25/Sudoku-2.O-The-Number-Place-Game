@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sudoku 2.O - The Number Place</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Nunito',sans-serif;
+  min-height:100vh;
+  background:#0a0a18;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow-x:hidden;
+}
+/* starfield */
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:0;animation:tw var(--d,3s) ease-in-out infinite var(--delay,0s);}
+@keyframes tw{0%,100%{opacity:0}50%{opacity:var(--op,.7)}}
+
+.wrap{position:relative;z-index:1;width:93%;max-width:620px;margin:16px auto;min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* PAGE base */
+.page{display:none;width:100%;flex-direction:column;align-items:center;justify-content:center;padding:24px 18px;box-sizing:border-box;}
+.page.active{display:flex;}
+
+/* ========== PAGE 1 INTRO ========== */
+#p-intro{
+  position:relative;
+  min-height:88vh;
+  border-radius:24px;
+  overflow:hidden;
+  padding:0;
+}
+/* VIDEO BACKGROUND - fixed to cover entire intro page behind content */
+#intro-video-bg{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:-2;
+  border-radius:24px;
+  pointer-events:none;
+}
+/* Dark overlay to make text readable */
+#p-intro::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%);
+  z-index:-1;
+  border-radius:24px;
+  pointer-events:none;
+}
+.title-wrap{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:22px 38px 18px;
+  border:2.5px solid #FF1493;
+  border-radius:16px;
+  background:rgba(0,0,0,.32);
+  backdrop-filter:blur(6px);
+  box-shadow:0 0 20px #FF149388,0 0 45px #FF149344,inset 0 0 20px #FF149311;
+  animation:bpulse 2.5s ease-in-out infinite;
+  flex:1;max-width:400px;margin:auto;justify-content:center;
+}
+@keyframes bpulse{
+  0%,100%{box-shadow:0 0 18px #FF149388,0 0 40px #FF149344;border-color:#FF1493;}
+  50%{box-shadow:0 0 30px #FF1493cc,0 0 70px #FF149366;border-color:#ff69b4;}
+}
+.t1{font-family:'Orbitron',sans-serif;font-size:2.5rem;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 0 10px rgba(255,255,255,.7),2px 2px 6px rgba(0,0,0,.9);line-height:1;}
+.t2{font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;color:#FFB6D9;letter-spacing:5px;text-transform:uppercase;text-shadow:0 0 8px #FFB6D999;}
+.t-letter{display:inline-block;opacity:0;animation:tfl .22s forwards;}
+@keyframes tfl{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#loading{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:2;font-family:'Orbitron',sans-serif;font-size:.95rem;color:#FF69B4;letter-spacing:4px;text-shadow:0 0 10px #FF69B4;display:none;}
+
+/* ========== PAGE 2 STORY ========== */
+#p-story{
+  min-height:88vh;
+  background:linear-gradient(145deg,#0d1b2a,#120a20);
+  border-radius:24px;border:1px solid rgba(255,20,147,.25);
+  box-shadow:0 0 40px rgba(255,20,147,.1);
+  gap:0;
+}
+.story-inner{width:100%;max-width:560px;background:rgba(255,255,255,.04);border:1px solid rgba(255,105,180,.2);border-radius:20px;padding:26px 24px 22px;}
+.story-lbl{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:4px;color:#FF69B4;text-transform:uppercase;margin-bottom:14px;text-shadow:0 0 8px #FF69B466;}
+#story-text{font-size:1.05rem;line-height:1.78;color:#D4E8FF;min-height:220px;word-break:break-word;word-wrap:break-word;overflow-wrap:break-word;white-space:normal;}
+.s-letter{opacity:0;animation:sfl .04s forwards;}
+@keyframes sfl{to{opacity:1}}
+.story-btns{display:flex;justify-content:flex-end;gap:12px;margin-top:22px;}
+
+/* ========== PAGE 3 LANGUAGE ========== */
+#p-lang{
+  min-height:88vh;
+  background:linear-gradient(145deg,#0d1b2a,#120a20);
+  border-radius:24px;border:1px solid rgba(255,20,147,.25);
+  gap:18px;
+  justify-content:center;
+  align-items:center;
+}
+#p-lang h1{font-family:'Orbitron',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:2px;text-shadow:0 0 14px #FF149366;text-align:center;}
+#p-lang .sub{font-size:.75rem;letter-spacing:3px;color:#FF69B4;text-transform:uppercase;text-align:center;}
+#lang-sel{
+  padding:13px 20px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;
+  border-radius:50px;border:1.5px solid rgba(255,20,147,.5);
+  background:rgba(255,255,255,.06);color:#fff;cursor:pointer;
+  width:80%;max-width:320px;text-align:center;
+  transition:border-color .3s,box-shadow .3s;
+}
+#lang-sel:focus{outline:none;border-color:#FF1493;box-shadow:0 0 16px #FF149355;}
+#lang-sel option{background:#1a0a2e;color:#fff;}
+#lang-msg{font-size:.85rem;color:#FF69B4;min-height:20px;text-align:center;}
+.lang-btns{display:flex;gap:14px;justify-content:center;}
+
+/* ========== BUTTONS ========== */
+.btn-p{
+  padding:12px 28px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;letter-spacing:1.5px;
+  border:none;border-radius:50px;cursor:pointer;
+  background:linear-gradient(135deg,#FF69B4,#CC1A7A,#9B0EA0);
+  color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4);
+  box-shadow:0 5px 18px rgba(255,20,147,.45);
+  transition:transform .18s,filter .18s,box-shadow .18s;
+}
+.btn-p:hover{transform:translateY(-3px);filter:brightness(1.12);box-shadow:0 9px 26px rgba(255,20,147,.6);}
+.btn-p:active{transform:translateY(1px);}
+.btn-s{
+  padding:11px 24px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:1px;
+  border:1.5px solid rgba(255,105,180,.45);border-radius:50px;cursor:pointer;
+  background:rgba(255,255,255,.05);color:#FFB6D9;
+  transition:all .2s;
+}
+.btn-s:hover{background:rgba(255,20,147,.12);border-color:#FF1493;transform:translateY(-2px);}
+
+/* sprinkle animation temporary */
+.sprinkle-temp{
+  position:fixed;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:9999;
+}
+
+@media(max-width:480px){.t1{font-size:1.85rem;}.t2{font-size:.8rem;letter-spacing:3px;}.title-wrap{padding:16px 20px 13px;}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrap">
+<!-- audio elements: BGM and SFX with proper mp3 sources -->
+<audio id="bgm" loop preload="auto"><source src="Song2.mp3" type="audio/mpeg"></audio>
+<div style="display:none;"><audio id="sfx-preload" preload="auto"><source src="button-sound.mp3" type="audio/mpeg"></audio></div>
+
+<!-- PAGE 1: INTRO with VIDEO BACKGROUND -->
+<div id="p-intro" class="page active">
+  <!-- Background video: assets/PAGE1.mp4 as background -->
+  <video id="intro-video-bg" autoplay muted loop playsinline preload="auto">
+    <source src="assets/PAGE1.mp4" type="video/mp4">
+  </video>
+  <div class="title-wrap">
+    <div class="t1" id="tl1"></div>
+    <div class="t2" id="tl2"></div>
+  </div>
+  <div id="loading">Loading</div>
+</div>
+
+<!-- PAGE 2: STORY -->
+<div id="p-story" class="page">
+  <div class="story-inner">
+    <div class="story-lbl">◆ The Origin Story ◆</div>
+    <div id="story-text"></div>
+    <div class="story-btns">
+      <button class="btn-s" id="skip-btn" style="display:none">SKIP</button>
+      <button class="btn-p" id="next-story-btn" style="display:none">NEXT →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: LANGUAGE -->
+<div id="p-lang" class="page">
+  <h1 id="lh">SELECT LANGUAGE</h1>
+  <div class="sub" id="lang-sub-txt">◆ Choose Your Language ◆</div>
+  <select id="lang-sel">
+    <option value="">-- Select Language --</option>
+    <option value="English">English</option>
+    <option value="Mandarin Chinese">中文 (Mandarin)</option>
+    <option value="Hindi">हिन्दी (Hindi)</option>
+    <option value="Spanish">Español (Spanish)</option>
+    <option value="French">Français (French)</option>
+    <option value="Korean">한국어 (Korean)</option>
+    <option value="Japanese">日本語 (Japanese)</option>
+    <option value="Arabic">العربية (Arabic)</option>
+    <option value="Zuni">Zuni</option>
+  </select>
+  <div id="lang-msg"></div>
+  <div class="lang-btns">
+    <button class="btn-p" id="lang-next-btn">NEXT ▶</button>
+  </div>
+</div>
+</div><!-- end wrap -->
+
+<script>
+(function(){
+// Stars background effect
+const sc=document.getElementById('stars');
+for(let i=0;i<110;i++){
+  const s=document.createElement('div');s.className='star';
+  s.style.left=Math.random()*100+'vw';s.style.top=Math.random()*100+'vh';
+  s.style.setProperty('--d',(2+Math.random()*4)+'s');
+  s.style.setProperty('--op',(0.3+Math.random()*0.6).toFixed(2));
+  s.style.setProperty('--delay',(Math.random()*5)+'s');
+  sc.appendChild(s);
+}
+
+// ----- FIX SOUND: button-sound.mp3 must work -----
+// Preload the sound effect properly
+const sfxAudio = new Audio();
+sfxAudio.src = "button-sound.mp3";
+sfxAudio.load();
+sfxAudio.volume = 0.6;
+
+// Reliable playSFX function
+function playSFX() {
+  try {
+    // Clone to allow rapid overlapping clicks
+    const snd = new Audio("button-sound.mp3");
+    snd.volume = 0.55;
+    snd.play().catch(e => console.log("SFX error: ", e));
+  } catch(e) { console.warn(e); }
+}
+
+// Visual sprinkle effect
+function sprinkle(el){
+  if(!el) return;
+  const rect = el.getBoundingClientRect();
+  const container = document.body;
+  for(let i=0;i<8;i++){
+    const sp=document.createElement('div');
+    sp.className='sprinkle-temp';
+    const colors=['#FFD700','#87CEEB','#FF69B4','#98FB98'];
+    sp.style.background=colors[Math.floor(Math.random()*colors.length)];
+    sp.style.left=(rect.left + Math.random()*rect.width)+'px';
+    sp.style.top=(rect.top + Math.random()*rect.height)+'px';
+    container.appendChild(sp);
+    const dx = (Math.random() - 0.5) * 60;
+    const dy = (Math.random() - 0.5) * 60 - 20;
+    setTimeout(()=>{ sp.style.transform=`translate(${dx}px, ${dy}px)`; sp.style.opacity='0'; sp.style.transition='transform 0.6s ease-out, opacity 0.6s'; },10);
+    setTimeout(()=>{ if(sp && sp.remove) sp.remove(); }, 700);
+  }
+}
+function clickFX(el){
+  playSFX();
+  if(el) sprinkle(el);
+}
+
+// Background music — start immediately from the very first page
+const bgmAudio = document.getElementById('bgm');
+if(bgmAudio) {
+  bgmAudio.volume = 0.35;
+  bgmAudio.loop = true;
+  // Try immediate autoplay (works on many browsers/devices)
+  bgmAudio.play().catch(()=>{});
+  // Fallback: retry on very first user interaction
+  const startBGM = () => { bgmAudio.play().catch(()=>{}); };
+  document.addEventListener('click', startBGM, { once: true });
+  document.addEventListener('touchstart', startBGM, { once: true });
+}
+// words.mp3 — looping typewriter sound while story text animates
+const wordsAudio = new Audio('words.mp3');
+wordsAudio.loop = true;
+wordsAudio.volume = 0.55;
+function startWordsMusic(){ wordsAudio.play().catch(()=>{}); }
+function stopWordsMusic(){ wordsAudio.pause(); wordsAudio.currentTime = 0; }
+
+// Video background
+const bgVideo = document.getElementById('intro-video-bg');
+if(bgVideo) {
+  bgVideo.play().catch(()=>{});
+  setTimeout(() => { if(bgVideo.paused) bgVideo.play().catch(()=>{}); }, 500);
+}
+
+// Title animation with "SUDOKU 2.O" and "THE NUMBER PLACE"
+function animTitle(){
+  const l1='SUDOKU 2.O', l2='THE NUMBER PLACE';
+  const e1=document.getElementById('tl1'), e2=document.getElementById('tl2');
+  e1.innerHTML='';e2.innerHTML='';
+  let delay=0;
+  for(const c of l1){
+    const sp=document.createElement('span');sp.className='t-letter';
+    sp.textContent=c===' '?'\u00A0':c;
+    sp.style.animationDelay=delay+'s';delay+=0.18;
+    e1.appendChild(sp);
+  }
+  for(const c of l2){
+    const sp=document.createElement('span');sp.className='t-letter';
+    sp.textContent=c===' '?'\u00A0':c;
+    sp.style.animationDelay=delay+'s';delay+=0.14;
+    e2.appendChild(sp);
+  }
+  const total=delay;
+  setTimeout(()=>{
+    const ld=document.getElementById('loading');ld.style.display='block';
+    let dotCount=0;
+    const iv=setInterval(()=>{dotCount=(dotCount+1)%4;ld.textContent='Loading'+'.'.repeat(dotCount);},500);
+    setTimeout(()=>{clearInterval(iv);showPage('p-story');},5000);
+  },(total+2)*1000);
+}
+setTimeout(animTitle,600);
+
+// Story Text
+const STORY="Sudoku's roots trace back to 18th-century Swiss mathematician Leonhard Euler's 'Latin Squares.' The modern puzzle, initially called 'Number Place,' was invented by American architect Howard Garns in 1979 and published in Dell Magazines. It gained widespread popularity when introduced in Japan in 1984 by Nikoli, who renamed it 'Sudoku' (meaning 'single number'). The puzzle truly exploded globally in the early 2000s after being featured in British newspapers, becoming a worldwide phenomenon enjoyed by millions.";
+let stIv=null;
+function animStory(){
+  const box=document.getElementById('story-text');
+  box.innerHTML='';
+  const skipBtn=document.getElementById('skip-btn');
+  const nextBtn=document.getElementById('next-story-btn');
+  skipBtn.style.display='none';
+  nextBtn.style.display='none';
+  startWordsMusic(); // start typewriter music when story begins
+  let i=0;
+  stIv=setInterval(()=>{
+    if(i>=STORY.length){
+      clearInterval(stIv);stIv=null;
+      stopWordsMusic(); // story finished — stop typewriter music
+      skipBtn.style.display='none';
+      nextBtn.style.display='inline-block';
+      return;
+    }
+    const sp=document.createElement('span');sp.className='s-letter';
+    sp.textContent=STORY[i];
+    box.appendChild(sp);
+    i++;
+    if(i===70) skipBtn.style.display='inline-block';
+  },36);
+}
+
+document.getElementById('skip-btn').addEventListener('click',()=>{
+  clickFX(document.getElementById('skip-btn'));
+  if(stIv){clearInterval(stIv);stIv=null;}
+  stopWordsMusic(); // user skipped — stop typewriter music immediately
+  document.getElementById('story-text').textContent=STORY;
+  document.getElementById('skip-btn').style.display='none';
+  document.getElementById('next-story-btn').style.display='inline-block';
+});
+document.getElementById('next-story-btn').addEventListener('click',()=>{
+  clickFX(document.getElementById('next-story-btn'));
+  showPage('p-lang');
+});
+
+// Language selection and redirection
+const TRANS={
+  "English":{h:"SELECT LANGUAGE",sub:"◆ CHOOSE YOUR LANGUAGE ◆",next:"NEXT ▶",msg:"Please choose a language first"},
+  "Mandarin Chinese":{h:"选择语言",sub:"◆ 选择你的语言 ◆",next:"下一步 ▶",msg:"请先选择语言"},
+  "Hindi":{h:"भाषा चुनें",sub:"◆ अपनी भाषा चुनें ◆",next:"अगला ▶",msg:"कृपया पहले भाषा चुनें"},
+  "Spanish":{h:"SELECCIONAR IDIOMA",sub:"◆ ELIGE TU IDIOMA ◆",next:"SIGUIENTE ▶",msg:"Elija el idioma primero"},
+  "French":{h:"CHOISIR LA LANGUE",sub:"◆ CHOISISSEZ VOTRE LANGUE ◆",next:"SUIVANT ▶",msg:"Veuillez d'abord choisir la langue"},
+  "Korean":{h:"언어 선택",sub:"◆ 언어를 선택하세요 ◆",next:"다음 ▶",msg:"먼저 언어를 선택하세요"},
+  "Japanese":{h:"言語を選択",sub:"◆ 言語を選んでください ◆",next:"次へ ▶",msg:"最初に言語を選択してください"},
+  "Arabic":{h:"اختر اللغة",sub:"◆ اختر لغتك ◆",next:"التالي ▶",msg:"الرجاء اختيار اللغة أولاً"},
+  "Zuni":{h:"SELECT LANGUAGE",sub:"◆ CHOOSE YOUR LANGUAGE ◆",next:"NEXT ▶",msg:"Please choose a language first"}
+};
+let selLang='English';
+const langSelect = document.getElementById('lang-sel');
+langSelect.addEventListener('change',e=>{
+  playSFX();
+  selLang=e.target.value;
+  if(selLang && TRANS[selLang]){
+    document.getElementById('lh').textContent=TRANS[selLang].h;
+    document.getElementById('lang-sub-txt').textContent=TRANS[selLang].sub;
+    document.getElementById('lang-next-btn').textContent=TRANS[selLang].next;
+    document.getElementById('lang-msg').textContent='';
+  }
+});
+document.getElementById('lang-next-btn').addEventListener('click',()=>{
+  playSFX(); // play sound immediately
+  sprinkle(document.getElementById('lang-next-btn'));
+  if(!langSelect.value){
+    document.getElementById('lang-msg').textContent=(TRANS[selLang]||TRANS.English).msg;
+    return;
+  }
+  // Short delay so button-sound.mp3 plays fully before page navigates
+  setTimeout(()=>{
+    window.location.href='game.html?lang='+encodeURIComponent(selLang);
+  }, 260);
+});
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='p-story') animStory();
+  if(id!=='p-intro'){
+    // optional: we don't pause the background video, it's fine
+  }
+}
+
+// Ensure video stays background and doesn't overlay text
+const videoElem = document.getElementById('intro-video-bg');
+if(videoElem) {
+  videoElem.style.position = 'absolute';
+  videoElem.style.top = '0';
+  videoElem.style.left = '0';
+  videoElem.style.width = '100%';
+  videoElem.style.height = '100%';
+  videoElem.style.objectFit = 'cover';
+  videoElem.style.zIndex = '-2';
+  videoElem.style.pointerEvents = 'none';
+}
+
+// Add dynamic style for sprinkle
+const styleSprinkle = document.createElement('style');
+styleSprinkle.textContent = `
+  .sprinkle-temp{position:fixed;width:6px;height:6px;border-radius:50%;background:gold;pointer-events:none;z-index:9999;transition:transform 0.6s ease-out, opacity 0.6s;opacity:1;}
+`;
+document.head.appendChild(styleSprinkle);
+})();
+</script>
+</body>
+</html>

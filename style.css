@@ -1,0 +1,84 @@
+/* General Reset */
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Trebuchet MS', sans-serif;
+    color: white;
+}
+
+/* Page Transitions */
+.page {
+    position: absolute;
+    width: 100%; height: 100%;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
+.active {
+    display: flex;
+    opacity: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Backgrounds */
+#video-bg {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%; min-height: 100%;
+    z-index: -1;
+}
+
+.bg-overlay {
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* UI Elements */
+.content-box {
+    background: rgba(0, 0, 0, 0.75);
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 600px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.glass-text {
+    font-size: 3.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 20px #00ffff;
+    letter-spacing: 8px;
+}
+
+button {
+    background: #00ffff;
+    color: #000;
+    border: none;
+    padding: 12px 30px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    text-transform: uppercase;
+}
+
+button:hover {
+    background: #fff;
+    box-shadow: 0 0 15px #00ffff;
+}
+
+.hidden { display: none; }
+
+.nav-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
