@@ -38,7 +38,6 @@ A complete, feature-rich Sudoku game with beautiful animations, sound effects, a
 - 한국어 (Korean)
 - 日本語 (Japanese)
 - العربية (Arabic)
-- Zuni
 
 ### Immersive Experience
 
